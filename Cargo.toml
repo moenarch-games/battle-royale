@@ -17,7 +17,7 @@ publish = false
 [workspace.dependencies]
 game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "769de47005cc37891011fc76ae183c18b7c5e0ae" }
 physics-engine = { git = "https://github.com/moritzbrantner/physics-engine.git", rev = "c796ea382bdcb0276b9309e8a3cca34c8c28313b" }
-input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "7df9ca0122fa18d50f764ee4a2f1b100982d2be4" }
+input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "f583caa0a9de83697867dac1eb4d1e7510c66add" }
 battle-royale-core = { path = "crates/battle-royale-core" }
 battle-royale-protocol = { path = "crates/battle-royale-protocol" }
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "signal", "sync"] }
