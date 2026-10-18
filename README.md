@@ -81,7 +81,7 @@ The opt-in full-capacity benchmark records release-mode authoritative tick cost 
 python3 benchmarks/run.py --output-dir performance-results
 ```
 
-`benchmark:full-capacity` is exposed through `.coding-tooling.json` but is intentionally absent from the fast/full correctness tiers. Hosted performance evidence runs on `main` and by manual dispatch, validates its artifacts against an exact pinned `performance-evidence` revision, and preserves the receipts as workflow artifacts. Wall-clock measurements are advisory rather than a correctness threshold. See [the benchmark contract](benchmarks/README.md).
+`benchmark` is exposed through `.coding-tooling.json` but is intentionally absent from the fast/full correctness tiers. Hosted performance evidence runs on `main` and by manual dispatch, validates its artifacts against an exact pinned `performance-evidence` revision, and preserves the receipts as workflow artifacts. Wall-clock measurements are advisory rather than a correctness threshold. See [the benchmark contract](benchmarks/README.md).
 
 ## Validation
 

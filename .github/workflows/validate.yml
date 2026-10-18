@@ -23,3 +23,16 @@ jobs:
       test_command: cargo test --workspace --all-features --locked
       build_command: cargo build --workspace --all-features --locked
       artifact_paths: ""
+
+  merge-ready:
+    name: merge-ready
+    if: ${{ always() }}
+    needs: [rust]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: moritzbrantner/reusable-workflows/.github/actions/merge-ready@b0f25f241d76af2584dfc9e375084ff5c5cb97da
+        with:
+          needs: ${{ toJSON(needs) }}
+          required: '["rust"]'
