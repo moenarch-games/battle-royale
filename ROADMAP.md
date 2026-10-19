@@ -1,5 +1,7 @@
 # Battle Royale roadmap
 
+The checked items below describe the existing authoritative **foundation**, not a playable MMORPG PvP mode. The agreed first-mode direction is tracked in the [Decision Atlas](docs/decisions/atlas.md); only Battle Royale is in immediate scope.
+
 ## Foundation — authoritative match kernel
 
 - [x] Establish Rust workspace, exact dependency pins and fail-closed validation.
@@ -20,27 +22,16 @@
 - [x] Keep operational status read-only and separate from gameplay mutation.
 - [ ] Add real WebTransport acceptance for two clients in one match and two isolated matches.
 
-## Combat model
+## First playable MMORPG PvP mode
 
-- [ ] Define server-owned weapon/fire/reload commands and deterministic cooldowns.
-- [ ] Add authoritative hit validation without trusting client hit results.
-- [ ] Keep projectile/character collision in `physics-engine`; Battle Royale owns damage rules.
-- [ ] Add knockdown/revive only after solo elimination semantics remain explicit.
-- [ ] Make all combat state replay-complete before adding cosmetic prediction.
+- [ ] Reuse authoritative opt-in MMORPG player-combat rules, attacks, guards, projectiles and class abilities ([mmorpg #339](https://github.com/moritzbrantner/mmorpg/issues/339)).
+- [ ] Admit max-level MMORPG character builds with legal level-appropriate gear, without modifying durable MMO progression ([mmorpg #340](https://github.com/moritzbrantner/mmorpg/issues/340)).
+- [ ] Replace duplicate player health, movement and physics with one authoritative `mmorpg-core::ZoneSimulation` per match; retain only match-specific storm, phase, elimination and winner logic ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
+- [ ] Preserve deterministic command ordering and complete match + zone recovery through the existing `game-server` host ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
+- [ ] Play as full-size MMORPG characters with a friend in one real hosted match using the MMORPG's presentation; change class/gear only between lives ([mmorpg #341](https://github.com/moritzbrantner/mmorpg/issues/341)).
+- [ ] Revalidate scale/performance on real MMORPG character combat and animation before claiming large-player readiness.
 
-## Loot and inventory
-
-- [ ] Define deterministic loot spawn tables from match seed + content revision.
-- [ ] Add bounded inventory/equipment authority and pickup/drop commands.
-- [ ] Keep item content/provenance in reusable asset/content foundations.
-- [ ] Add transaction-safe pickup conflict handling and replay evidence.
-
-## Drop and traversal
-
-- [ ] Replace placeholder spawn slots with an authoritative transport/drop path.
-- [ ] Model jump, glide and landing as server-owned state transitions.
-- [ ] Add terrain/static collision content through shared physics/content foundations.
-- [ ] Add vehicles only after player traversal correctness and recovery are stable.
+Extra PvP modes and precise rules for loot, teams, respawn, prizes, balance and the drop phase are **not yet selected**. Existing match defaults are implementation scaffolding; do not build gun/fire/reload mechanics or a second inventory/combat system.
 
 ## Networking and scale
 
@@ -59,7 +50,7 @@
 
 ## Client foundations
 
-- [ ] Reuse pinned `3d-lab` rendering rather than creating a renderer here.
+- [ ] Reuse the MMORPG's existing Three.js/browser and wgpu/native character presentation, animation and assets, without introducing a Battle Royale-specific renderer.
 - [x] Reuse the shared `input-bindings` action model for Battle Royale client actions.
 - [x] Add deterministic mobile thumbstick adaptation onto the existing authoritative movement command.
 - [x] Keep look/menu mobile interactions client-local until game rules require an authoritative command.

@@ -2,9 +2,17 @@
 
 Server-authoritative Battle Royale foundation built on the same reusable multiplayer and physics boundaries as `mmorpg`.
 
-This first implementation slice is deliberately about authority, determinism and recovery rather than presentation. It provides a deterministic 100-player match simulation, lobby/drop/combat/finished phases, safe-zone shrink, storm elimination, player-scoped projections and a thin `game-server` adapter. Rendering, weapons, loot, matchmaking and deployment orchestration remain separate follow-up boundaries.
+This first implementation slice is deliberately about authority, determinism and recovery rather than presentation. It provides a deterministic 100-player match simulation, lobby/drop/combat/finished phases, safe-zone shrink, storm elimination, player-scoped projections and a thin `game-server` adapter. **It does not yet implement MMORPG combat or a playable rendered PvP match**; its existing movement/health simulation is transitional.
 
-## Authority map
+## Approved direction (not yet implemented)
+
+Battle Royale is the **first fantasy PvP mode of the broader MMORPG**. Players should enter as full-scale MMORPG characters at the current supported maximum level, with class-appropriate equipment, the MMORPG's actual implemented abilities and no progression grind. Equipment/class changes are permitted **between lives**, not during combat. Deliver this one mode before designing more PvP modes or committing detailed match rules.
+
+The target imports a pinned `mmorpg-core` `ZoneSimulation` directly: it owns character movement, health, combat, abilities and Rapier physics; this repository owns only the match's phase, storm, elimination and victory semantics. Use the existing MMORPG character rendering and clients. The current implementation listed below **has not yet been migrated**; do not interpret its 100-player integer simulation benchmark as proof of 100-player animated PvP performance.
+
+See the [Battle Royale Decision Atlas](docs/decisions/atlas.md), [shared PvP combat issue](https://github.com/moritzbrantner/mmorpg/issues/339), [max-level sandbox setup](https://github.com/moritzbrantner/mmorpg/issues/340), [first match integration](https://github.com/moritzbrantner/battle-royale/issues/13), and [MMORPG client entry](https://github.com/moritzbrantner/mmorpg/issues/341).
+
+## Current implementation authority map
 
 | Concern | Authority |
 | --- | --- |
