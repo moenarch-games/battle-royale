@@ -4,20 +4,19 @@ use battle_royale_core::{
     BattleMatchId, CanonicalMatchSnapshot, CanonicalPlayerSnapshot, EliminationCause,
     MAX_PLAYERS_PER_MATCH, MatchCommand, MatchPhase, MatchSnapshot, PlayerSnapshot, StormSnapshot,
 };
-use std::error::Error;
-use std::fmt;
+use mmorpg_core::{
+    ClassChoice, EQUIPMENT_SLOTS, EphemeralCharacterBuild, ItemId, PlayerClass, Sex,
+};
+use std::{error::Error, fmt};
 
-pub const PROTOCOL_VERSION: u16 = 1;
-const COMMAND_BYTES: usize = 5;
-const COMMAND_KIND_MOVEMENT: u8 = 1;
+pub const PROTOCOL_VERSION: u16 = 2;
 const CANONICAL_MAGIC: [u8; 4] = *b"BRCA";
 const PLAYER_MAGIC: [u8; 4] = *b"BRPL";
-
+const MAX_COMPOSED_ZONE_BYTES: usize = 1024 * 1024;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProtocolError {
     message: String,
 }
-
 impl ProtocolError {
     #[must_use]
     pub fn new(message: impl Into<String>) -> Self {
@@ -25,141 +24,202 @@ impl ProtocolError {
             message: message.into(),
         }
     }
-
     #[must_use]
     pub fn message(&self) -> &str {
         &self.message
     }
 }
-
 impl fmt::Display for ProtocolError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.message)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
     }
 }
-
 impl Error for ProtocolError {}
+fn shared_error(error: impl fmt::Display) -> ProtocolError {
+    ProtocolError::new(error.to_string())
+}
 
 #[must_use]
-pub fn encode_command(command: MatchCommand) -> [u8; COMMAND_BYTES] {
-    let mut bytes = [0_u8; COMMAND_BYTES];
-    bytes[..2].copy_from_slice(&PROTOCOL_VERSION.to_le_bytes());
+pub fn encode_command(command: MatchCommand) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    write_u16(&mut bytes, PROTOCOL_VERSION);
     match command {
         MatchCommand::SetMovement { x, z } => {
-            bytes[2] = COMMAND_KIND_MOVEMENT;
-            bytes[3] = x.to_le_bytes()[0];
-            bytes[4] = z.to_le_bytes()[0];
+            bytes.extend_from_slice(&[1, x as u8, z as u8]);
+        }
+        MatchCommand::SelectBuild(build) => {
+            bytes.extend_from_slice(&[2, build.class().class.code(), build.class().sex.code()]);
+            for slot in build.equipment().slots() {
+                write_u16(&mut bytes, slot.map_or(0, ItemId::get));
+            }
+        }
+        MatchCommand::Character(command) => {
+            bytes.push(3);
+            bytes.extend_from_slice(&mmorpg_protocol::encode_command(command));
         }
     }
     bytes
 }
-
 pub fn decode_command(payload: &[u8]) -> Result<MatchCommand, ProtocolError> {
-    if payload.len() != COMMAND_BYTES {
-        return Err(ProtocolError::new("invalid command length"));
-    }
-    let version = u16::from_le_bytes([payload[0], payload[1]]);
-    if version != PROTOCOL_VERSION {
+    let mut cursor = Cursor::new(payload);
+    if cursor.read_u16()? != PROTOCOL_VERSION {
         return Err(ProtocolError::new("unsupported command protocol version"));
     }
-    if payload[2] != COMMAND_KIND_MOVEMENT {
-        return Err(ProtocolError::new("unsupported command kind"));
-    }
-    let x = i8::from_le_bytes([payload[3]]);
-    let z = i8::from_le_bytes([payload[4]]);
-    if !(-1..=1).contains(&x) || !(-1..=1).contains(&z) {
-        return Err(ProtocolError::new(
-            "movement components must be between -1 and 1",
-        ));
-    }
-    Ok(MatchCommand::SetMovement { x, z })
+    let command = match cursor.read_u8()? {
+        1 => {
+            let x = cursor.read_u8()? as i8;
+            let z = cursor.read_u8()? as i8;
+            if !(-1..=1).contains(&x) || !(-1..=1).contains(&z) {
+                return Err(ProtocolError::new(
+                    "movement components must be between -1 and 1",
+                ));
+            }
+            MatchCommand::SetMovement { x, z }
+        }
+        2 => {
+            let class = PlayerClass::from_code(cursor.read_u8()?)
+                .ok_or_else(|| ProtocolError::new("unknown class"))?;
+            let sex = Sex::from_code(cursor.read_u8()?)
+                .ok_or_else(|| ProtocolError::new("unknown sex"))?;
+            let mut slots = [None; EQUIPMENT_SLOTS];
+            for slot in &mut slots {
+                let id = cursor.read_u16()?;
+                *slot = (id != 0).then_some(ItemId::new(id));
+            }
+            MatchCommand::SelectBuild(
+                EphemeralCharacterBuild::new(ClassChoice { class, sex }, slots)
+                    .map_err(shared_error)?,
+            )
+        }
+        3 => {
+            let remaining = cursor.bytes.len() - cursor.offset;
+            MatchCommand::Character(
+                mmorpg_protocol::decode_command(cursor.take(remaining)?).map_err(shared_error)?,
+            )
+        }
+        _ => return Err(ProtocolError::new("unsupported command kind")),
+    };
+    cursor.finish()?;
+    Ok(command)
 }
 
-#[must_use]
-pub fn encode_canonical_snapshot(snapshot: &CanonicalMatchSnapshot) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(128 + snapshot.players.len() * 64);
+pub fn encode_canonical_snapshot(
+    snapshot: &CanonicalMatchSnapshot,
+) -> Result<Vec<u8>, ProtocolError> {
+    let zone = mmorpg_protocol::encode_canonical_snapshot(&snapshot.zone).map_err(shared_error)?;
+    let mut bytes = Vec::new();
     bytes.extend_from_slice(&CANONICAL_MAGIC);
     write_common_header(&mut bytes, CommonHeader::from(snapshot));
-    write_u16(
-        &mut bytes,
-        u16::try_from(snapshot.players.len()).unwrap_or(u16::MAX),
-    );
+    validate_player_count(snapshot.players.len())?;
+    write_u16(&mut bytes, snapshot.players.len() as u16);
     for player in &snapshot.players {
-        write_canonical_player(&mut bytes, player);
+        write_u32(&mut bytes, player.player_id);
+        write_u32(&mut bytes, player.last_sequence);
+        write_option_u64(&mut bytes, player.elimination_tick);
+        bytes.push(encode_cause(player.elimination_cause));
     }
-    bytes
+    write_zone(&mut bytes, &zone)?;
+    Ok(bytes)
 }
-
 pub fn decode_canonical_snapshot(payload: &[u8]) -> Result<CanonicalMatchSnapshot, ProtocolError> {
     let mut cursor = Cursor::new(payload);
     cursor.expect_magic(CANONICAL_MAGIC)?;
-    let header = read_common_header(&mut cursor)?;
+    let h = read_common_header(&mut cursor)?;
     let count = usize::from(cursor.read_u16()?);
     validate_player_count(count)?;
     let mut players = Vec::with_capacity(count);
     for _ in 0..count {
-        players.push(read_canonical_player(&mut cursor)?);
+        players.push(CanonicalPlayerSnapshot {
+            player_id: cursor.read_u32()?,
+            last_sequence: cursor.read_u32()?,
+            elimination_tick: cursor.read_option_u64()?,
+            elimination_cause: decode_cause(cursor.read_u8()?)?,
+        });
     }
+    let zone = mmorpg_protocol::decode_canonical_snapshot(read_zone(&mut cursor)?)
+        .map_err(shared_error)?;
     cursor.finish()?;
     Ok(CanonicalMatchSnapshot {
-        schema_version: header.schema_version,
-        ruleset_revision: header.ruleset_revision,
-        match_id: header.match_id,
-        tick: header.tick,
-        phase: header.phase,
-        phase_started_tick: header.phase_started_tick,
-        combat_started_tick: header.combat_started_tick,
-        lobby_ready_tick: header.lobby_ready_tick,
-        storm: header.storm,
-        winner: header.winner,
+        schema_version: h.schema_version,
+        ruleset_revision: h.ruleset_revision,
+        match_id: h.match_id,
+        tick: h.tick,
+        phase: h.phase,
+        phase_started_tick: h.phase_started_tick,
+        combat_started_tick: h.combat_started_tick,
+        lobby_ready_tick: h.lobby_ready_tick,
+        storm: h.storm,
+        winner: h.winner,
         players,
+        zone,
     })
 }
-
-#[must_use]
-pub fn encode_snapshot(snapshot: &MatchSnapshot) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(128 + snapshot.players.len() * 48);
+pub fn encode_snapshot(snapshot: &MatchSnapshot) -> Result<Vec<u8>, ProtocolError> {
+    let zone = mmorpg_protocol::encode_snapshot(&snapshot.zone).map_err(shared_error)?;
+    let mut bytes = Vec::new();
     bytes.extend_from_slice(&PLAYER_MAGIC);
     write_common_header(&mut bytes, CommonHeader::from(snapshot));
     write_u32(&mut bytes, snapshot.acknowledged_sequence);
-    write_u16(
-        &mut bytes,
-        u16::try_from(snapshot.players.len()).unwrap_or(u16::MAX),
-    );
+    validate_player_count(snapshot.players.len())?;
+    write_u16(&mut bytes, snapshot.players.len() as u16);
     for player in &snapshot.players {
-        write_player(&mut bytes, player);
+        write_u32(&mut bytes, player.player_id);
+        bytes.push(u8::from(player.alive));
+        write_option_u64(&mut bytes, player.elimination_tick);
+        bytes.push(encode_cause(player.elimination_cause));
     }
-    bytes
+    write_zone(&mut bytes, &zone)?;
+    Ok(bytes)
 }
-
 pub fn decode_snapshot(payload: &[u8]) -> Result<MatchSnapshot, ProtocolError> {
     let mut cursor = Cursor::new(payload);
     cursor.expect_magic(PLAYER_MAGIC)?;
-    let header = read_common_header(&mut cursor)?;
+    let h = read_common_header(&mut cursor)?;
     let acknowledged_sequence = cursor.read_u32()?;
     let count = usize::from(cursor.read_u16()?);
     validate_player_count(count)?;
     let mut players = Vec::with_capacity(count);
     for _ in 0..count {
-        players.push(read_player(&mut cursor)?);
+        players.push(PlayerSnapshot {
+            player_id: cursor.read_u32()?,
+            alive: cursor.read_bool()?,
+            elimination_tick: cursor.read_option_u64()?,
+            elimination_cause: decode_cause(cursor.read_u8()?)?,
+        });
     }
+    let zone = mmorpg_protocol::decode_snapshot(read_zone(&mut cursor)?).map_err(shared_error)?;
     cursor.finish()?;
     Ok(MatchSnapshot {
-        schema_version: header.schema_version,
-        ruleset_revision: header.ruleset_revision,
-        match_id: header.match_id,
-        tick: header.tick,
-        phase: header.phase,
-        phase_started_tick: header.phase_started_tick,
-        combat_started_tick: header.combat_started_tick,
-        lobby_ready_tick: header.lobby_ready_tick,
-        storm: header.storm,
-        winner: header.winner,
+        schema_version: h.schema_version,
+        ruleset_revision: h.ruleset_revision,
+        match_id: h.match_id,
+        tick: h.tick,
+        phase: h.phase,
+        phase_started_tick: h.phase_started_tick,
+        combat_started_tick: h.combat_started_tick,
+        lobby_ready_tick: h.lobby_ready_tick,
+        storm: h.storm,
+        winner: h.winner,
         acknowledged_sequence,
         players,
+        zone,
     })
 }
-
+fn write_zone(bytes: &mut Vec<u8>, zone: &[u8]) -> Result<(), ProtocolError> {
+    if zone.len() > MAX_COMPOSED_ZONE_BYTES {
+        return Err(ProtocolError::new("composed zone payload is too large"));
+    }
+    write_u32(bytes, zone.len() as u32);
+    bytes.extend_from_slice(zone);
+    Ok(())
+}
+fn read_zone<'a>(cursor: &mut Cursor<'a>) -> Result<&'a [u8], ProtocolError> {
+    let len = cursor.read_u32()? as usize;
+    if len > MAX_COMPOSED_ZONE_BYTES {
+        return Err(ProtocolError::new("composed zone payload is too large"));
+    }
+    cursor.take(len)
+}
 #[derive(Clone, Copy)]
 struct CommonHeader {
     schema_version: u16,
@@ -248,60 +308,6 @@ fn read_common_header(cursor: &mut Cursor<'_>) -> Result<CommonHeader, ProtocolE
     })
 }
 
-fn write_canonical_player(bytes: &mut Vec<u8>, player: &CanonicalPlayerSnapshot) {
-    write_u32(bytes, player.player_id);
-    write_vec3(bytes, player.position);
-    write_vec3(bytes, player.velocity);
-    bytes.push(player.movement_x.to_le_bytes()[0]);
-    bytes.push(player.movement_z.to_le_bytes()[0]);
-    write_u32(bytes, player.last_sequence);
-    write_u16(bytes, player.spawn_slot);
-    write_u16(bytes, player.health);
-    bytes.push(u8::from(player.alive));
-    write_option_u64(bytes, player.elimination_tick);
-    bytes.push(encode_cause(player.elimination_cause));
-}
-
-fn read_canonical_player(
-    cursor: &mut Cursor<'_>,
-) -> Result<CanonicalPlayerSnapshot, ProtocolError> {
-    Ok(CanonicalPlayerSnapshot {
-        player_id: cursor.read_u32()?,
-        position: cursor.read_vec3()?,
-        velocity: cursor.read_vec3()?,
-        movement_x: i8::from_le_bytes([cursor.read_u8()?]),
-        movement_z: i8::from_le_bytes([cursor.read_u8()?]),
-        last_sequence: cursor.read_u32()?,
-        spawn_slot: cursor.read_u16()?,
-        health: cursor.read_u16()?,
-        alive: cursor.read_bool()?,
-        elimination_tick: cursor.read_option_u64()?,
-        elimination_cause: decode_cause(cursor.read_u8()?)?,
-    })
-}
-
-fn write_player(bytes: &mut Vec<u8>, player: &PlayerSnapshot) {
-    write_u32(bytes, player.player_id);
-    write_vec3(bytes, player.position);
-    write_vec3(bytes, player.velocity);
-    write_u16(bytes, player.health);
-    bytes.push(u8::from(player.alive));
-    write_option_u64(bytes, player.elimination_tick);
-    bytes.push(encode_cause(player.elimination_cause));
-}
-
-fn read_player(cursor: &mut Cursor<'_>) -> Result<PlayerSnapshot, ProtocolError> {
-    Ok(PlayerSnapshot {
-        player_id: cursor.read_u32()?,
-        position: cursor.read_vec3()?,
-        velocity: cursor.read_vec3()?,
-        health: cursor.read_u16()?,
-        alive: cursor.read_bool()?,
-        elimination_tick: cursor.read_option_u64()?,
-        elimination_cause: decode_cause(cursor.read_u8()?)?,
-    })
-}
-
 fn validate_player_count(count: usize) -> Result<(), ProtocolError> {
     if count > MAX_PLAYERS_PER_MATCH {
         return Err(ProtocolError::new(
@@ -335,6 +341,7 @@ fn encode_cause(cause: Option<EliminationCause>) -> u8 {
         None => 0,
         Some(EliminationCause::Storm) => 1,
         Some(EliminationCause::SessionExpired) => 2,
+        Some(EliminationCause::Combat) => 3,
     }
 }
 
@@ -343,14 +350,9 @@ fn decode_cause(value: u8) -> Result<Option<EliminationCause>, ProtocolError> {
         0 => Ok(None),
         1 => Ok(Some(EliminationCause::Storm)),
         2 => Ok(Some(EliminationCause::SessionExpired)),
+        3 => Ok(Some(EliminationCause::Combat)),
         _ => Err(ProtocolError::new("invalid elimination cause")),
     }
-}
-
-fn write_vec3(bytes: &mut Vec<u8>, value: [i32; 3]) {
-    write_i32(bytes, value[0]);
-    write_i32(bytes, value[1]);
-    write_i32(bytes, value[2]);
 }
 
 fn write_option_u64(bytes: &mut Vec<u8>, value: Option<u64>) {
@@ -440,10 +442,6 @@ impl<'a> Cursor<'a> {
         Ok(i32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
     }
 
-    fn read_vec3(&mut self) -> Result<[i32; 3], ProtocolError> {
-        Ok([self.read_i32()?, self.read_i32()?, self.read_i32()?])
-    }
-
     fn read_option_u64(&mut self) -> Result<Option<u64>, ProtocolError> {
         match self.read_u8()? {
             0 => Ok(None),
@@ -484,59 +482,69 @@ impl<'a> Cursor<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use battle_royale_core::{BattleRoyaleMatch, LOBBY_COUNTDOWN_TICKS, MatchCommand, MatchPhase};
-
+    use battle_royale_core::{BattleRoyaleMatch, ZoneCommand};
     #[test]
-    fn command_roundtrip_is_exact_and_rejects_trailing_bytes() {
-        let encoded = encode_command(MatchCommand::SetMovement { x: -1, z: 1 });
-        assert_eq!(
-            decode_command(&encoded).unwrap(),
-            MatchCommand::SetMovement { x: -1, z: 1 }
-        );
-
-        let mut trailing = encoded.to_vec();
-        trailing.push(0);
-        assert_eq!(
-            decode_command(&trailing).unwrap_err().message(),
-            "invalid command length"
+    fn command_envelopes_preserve_shared_intents_and_validate_builds() {
+        let build = EphemeralCharacterBuild::standard(ClassChoice {
+            class: PlayerClass::Arcanist,
+            sex: Sex::Female,
+        })
+        .unwrap();
+        for command in [
+            MatchCommand::SetMovement { x: -1, z: 1 },
+            MatchCommand::SelectBuild(build),
+            MatchCommand::Character(ZoneCommand::UseAbility {
+                ability: 9,
+                target: Some(mmorpg_core::EntityRef::Player(2)),
+            }),
+        ] {
+            let encoded = encode_command(command);
+            assert_eq!(decode_command(&encoded).unwrap(), command);
+            let mut trailing = encoded.clone();
+            trailing.push(0);
+            assert!(decode_command(&trailing).is_err());
+        }
+        let mut invalid = encode_command(MatchCommand::SelectBuild(build));
+        invalid[5..7].copy_from_slice(&u16::MAX.to_le_bytes());
+        assert!(decode_command(&invalid).is_err());
+        assert!(
+            decode_command(&[1, 0, 1, 0, 0]).is_err(),
+            "old commands fail closed"
         );
     }
-
     #[test]
-    fn canonical_and_player_snapshots_roundtrip() {
+    fn complete_zone_and_player_projection_roundtrip_separately() {
         let mut simulation = BattleRoyaleMatch::new(BattleMatchId::new(31));
         simulation.add_player(1).unwrap();
         simulation.add_player(2).unwrap();
         simulation
             .apply_command(1, 4, MatchCommand::SetMovement { x: 1, z: 0 })
             .unwrap();
-        for _ in 0..LOBBY_COUNTDOWN_TICKS {
-            simulation.advance_tick().unwrap();
-        }
-        assert_eq!(simulation.phase(), MatchPhase::Drop);
-
-        let canonical = simulation.snapshot();
+        simulation.advance_tick().unwrap();
+        let canonical = simulation.snapshot().unwrap();
         let visible = simulation.snapshot_for_player(1).unwrap();
-
         assert_eq!(
-            decode_canonical_snapshot(&encode_canonical_snapshot(&canonical)).unwrap(),
+            decode_canonical_snapshot(&encode_canonical_snapshot(&canonical).unwrap()).unwrap(),
             canonical
         );
         assert_eq!(
-            decode_snapshot(&encode_snapshot(&visible)).unwrap(),
+            decode_snapshot(&encode_snapshot(&visible).unwrap()).unwrap(),
             visible
         );
+        assert!(decode_canonical_snapshot(&encode_snapshot(&visible).unwrap()).is_err());
+        assert!(decode_snapshot(&encode_canonical_snapshot(&canonical).unwrap()).is_err());
     }
-
     #[test]
     fn malformed_snapshot_fails_closed() {
         let mut simulation = BattleRoyaleMatch::new(BattleMatchId::new(32));
         simulation.add_player(1).unwrap();
-        let mut encoded = encode_canonical_snapshot(&simulation.snapshot());
+        let mut encoded = encode_canonical_snapshot(&simulation.snapshot().unwrap()).unwrap();
         encoded.push(9);
         assert_eq!(
             decode_canonical_snapshot(&encoded).unwrap_err().message(),
             "snapshot has trailing bytes"
         );
+        encoded.truncate(12);
+        assert!(decode_canonical_snapshot(&encoded).is_err());
     }
 }

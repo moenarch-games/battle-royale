@@ -1,12 +1,12 @@
 # Battle Royale roadmap
 
-The checked items below describe the existing authoritative **foundation**, not a playable MMORPG PvP mode. The agreed first-mode direction is tracked in the [Decision Atlas](docs/decisions/atlas.md); only Battle Royale is in immediate scope.
+The checked items below distinguish the composed authoritative match and real two-client transport from the still-pending rendered MMORPG mode entrance. The agreed first-mode direction is tracked in the [Decision Atlas](docs/decisions/atlas.md); only Battle Royale is in immediate scope.
 
 ## Foundation — authoritative match kernel
 
 - [x] Establish Rust workspace, exact dependency pins and fail-closed validation.
 - [x] Define deterministic match identity, player capacity and ordered state.
-- [x] Delegate movement/collision integration to `physics-engine`.
+- [x] Replace the historical direct `physics-engine` integration with one MMORPG zone and its Rapier movement.
 - [x] Define Waiting -> Drop -> Combat -> Finished lifecycle.
 - [x] Add deterministic safe-zone shrink and storm elimination.
 - [x] Keep canonical recovery snapshots separate from player-scoped projections.
@@ -20,14 +20,15 @@ The checked items below describe the existing authoritative **foundation**, not 
 - [x] Expose health/readiness/status through the reusable host status contract.
 - [x] Add graceful hosted recovery for a complete configured match set.
 - [x] Keep operational status read-only and separate from gameplay mutation.
-- [ ] Add real WebTransport acceptance for two clients in one match and two isolated matches.
+- [x] Prove two real WebTransport clients fight and receive the same match winner.
+- [ ] Prove two simultaneous hosted matches remain isolated over real WebTransport.
 
 ## First playable MMORPG PvP mode
 
-- [ ] Reuse authoritative opt-in MMORPG player-combat rules, attacks, guards, projectiles and class abilities ([mmorpg #339](https://github.com/moritzbrantner/mmorpg/issues/339)).
-- [ ] Admit max-level MMORPG character builds with legal level-appropriate gear, without modifying durable MMO progression ([mmorpg #340](https://github.com/moritzbrantner/mmorpg/issues/340)).
-- [ ] Replace duplicate player health, movement and physics with one authoritative `mmorpg-core::ZoneSimulation` per match; retain only match-specific storm, phase, elimination and winner logic ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
-- [ ] Preserve deterministic command ordering and complete match + zone recovery through the existing `game-server` host ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
+- [x] Reuse authoritative opt-in MMORPG player-combat rules, attacks, guards, projectiles and class abilities ([mmorpg #339](https://github.com/moritzbrantner/mmorpg/issues/339)).
+- [x] Admit max-level MMORPG character builds with legal level-appropriate gear, without modifying durable MMO progression ([mmorpg #340](https://github.com/moritzbrantner/mmorpg/issues/340)).
+- [x] Replace duplicate player health, movement and physics with one authoritative `mmorpg-core::ZoneSimulation` per match; retain only match-specific storm, phase, elimination and winner logic ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
+- [x] Preserve deterministic command ordering and complete match + zone recovery through the existing `game-server` host ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
 - [ ] Play as full-size MMORPG characters with a friend in one real hosted match using the MMORPG's presentation; change class/gear only between lives ([mmorpg #341](https://github.com/moritzbrantner/mmorpg/issues/341)).
 - [ ] Revalidate scale/performance on real MMORPG character combat and animation before claiming large-player readiness.
 
@@ -62,7 +63,7 @@ Extra PvP modes and precise rules for loot, teams, respawn, prizes, balance and 
 
 ## Evidence
 
-- [x] Add deterministic 100-player storm/movement workload fixtures.
+- [x] Revalidate the deterministic 100-character capacity/movement workload on the composed MMORPG zone (headless correctness, not rendered/network scale).
 - [x] Add performance receipts for tick cost and projection bytes separately from correctness.
 - [ ] Add packet impairment/reconnect acceptance using the existing `game-server` transport harness patterns.
 - [ ] Add long-run replay equivalence and recovery corruption tests.

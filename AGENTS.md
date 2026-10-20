@@ -1,14 +1,14 @@
 # Agent guidance
 
-## Approved direction (not yet implemented)
+## Approved direction
 
-Read [the Battle Royale Decision Atlas](docs/decisions/atlas.md). This repository is the **first PvP mode of the MMORPG**, not an independent shooter. The target is one `mmorpg-core::ZoneSimulation` per match for actual max-level MMORPG characters, PvP combat, health and Rapier physics; `battle-royale-core` supplies match phases, storm, elimination and victory only. Match-specific loadouts are selected before spawn or after elimination/between lives, never mid-life. One mode first; defer other modes and detailed rules. Existing standalone player/physics code is transitional; do not extend it as a competing implementation. See [battle-royale #13](https://github.com/moritzbrantner/battle-royale/issues/13) and [mmorpg #339](https://github.com/moritzbrantner/mmorpg/issues/339).
+Read [the Battle Royale Decision Atlas](docs/decisions/atlas.md). This repository is the **first PvP mode of the MMORPG**, not an independent shooter. The implementation uses one `mmorpg-core::ZoneSimulation` per match for actual max-level MMORPG characters, PvP combat, health and Rapier physics; `battle-royale-core` supplies match phases, storm, elimination and victory only. Match-specific loadouts are selected before spawn or after elimination/between lives, never mid-life. One mode first; defer other modes and detailed rules. Do not reintroduce a standalone player/physics implementation. The rendered MMORPG mode entrance remains #341. See [battle-royale #13](https://github.com/moritzbrantner/battle-royale/issues/13) and [mmorpg #339](https://github.com/moritzbrantner/mmorpg/issues/339).
 
 ## Authority
 
-- `battle-royale-core` owns deterministic match rules: lifecycle phases, storm/safe-zone state, elimination semantics, spawn allocation, authoritative player intent and player-visible interest policy.
+- `battle-royale-core` owns deterministic match rules: lifecycle phases, storm/safe-zone state, elimination semantics, arena content and mode information visibility. The shared zone owns character intent, physical spawn allocation and character interest.
 - `battle-royale-client` owns Battle Royale-specific client adaptation only: semantic action declarations and normalized client input -> authoritative command mapping. It must not become a second source of match truth or fork reusable device/input semantics.
-- The current prototype delegates collision and movement to pinned `physics-engine`. The approved future match delegates them to the composed MMORPG zone's Rapier integration; do not reimplement a second physics engine or combat engine.
+- The composed MMORPG zone owns health, combat, equipment and Rapier movement. Battle Royale must not mirror character state or implement a second physics/combat engine.
 - `game-server` owns session identity, sequencing, tick scheduling, reconnects, replay/recovery, WebTransport and multi-match process hosting. Keep Battle Royale adapters thin.
 - Matchmaking, accounts, parties, rankings and fleet placement remain outside match simulation authority. Integrate existing services at explicit boundaries instead of importing their state into the hot loop.
 

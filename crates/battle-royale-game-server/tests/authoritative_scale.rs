@@ -3,7 +3,9 @@ use battle_royale_game_server::BattleRoyaleGameServerAdapter;
 use battle_royale_protocol::{decode_canonical_snapshot, decode_snapshot, encode_command};
 use game_server::GameSimulation;
 
-const CANONICAL_SNAPSHOT_BUDGET_BYTES: usize = 8 * 1024;
+// Format 2 includes the complete shared MMORPG zone (24,040 bytes at fresh capacity),
+// replacing the old 8 KiB baseline for the retired integer-only player records.
+const CANONICAL_SNAPSHOT_BUDGET_BYTES: usize = 32 * 1024;
 const PLAYER_SNAPSHOT_BUDGET_BYTES: usize = 4 * 1024;
 const DETERMINISM_TICKS: usize = 512;
 
