@@ -12,6 +12,24 @@ The target imports a pinned `mmorpg-core` `ZoneSimulation` directly: it owns cha
 
 See the [Battle Royale Decision Atlas](docs/decisions/atlas.md), [shared PvP combat issue](https://github.com/moritzbrantner/mmorpg/issues/339), [max-level sandbox setup](https://github.com/moritzbrantner/mmorpg/issues/340), [first match integration](https://github.com/moritzbrantner/battle-royale/issues/13), and [MMORPG client entry](https://github.com/moritzbrantner/mmorpg/issues/341).
 
+## Pinned MMORPG combat contract (development only)
+
+`battle-royale-core` has a public-API integration test against `mmorpg-core` and
+`mmorpg-protocol` at exact revision `f622f99007c6ff9010df30e64d07a600159ef6fa`
+([MMORPG #339](https://github.com/moritzbrantner/mmorpg/issues/339)). It admits two
+players to an explicit arena, casts Firebolt, round-trips a canonical checkpoint
+mid-cast and verifies identical continuation through the real hit. It uses no private
+MMORPG state or replacement combat calculation.
+
+```sh
+cargo test -p battle-royale-core --test mmorpg_combat_contract --locked
+```
+
+These are **development dependencies and a consumer contract proof**. The running
+match still uses the transitional implementation below; replacing it, max-level setup,
+match elimination/winner composition and real two-client play remain #13 and MMORPG
+#340/#341. This test does not make those roadmap items complete.
+
 ## Current implementation authority map
 
 | Concern | Authority |

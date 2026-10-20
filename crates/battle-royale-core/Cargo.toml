@@ -11,3 +11,8 @@ physics-engine.workspace = true
 
 [lints]
 workspace = true
+
+# Public API proof for MMORPG #339. Runtime match composition remains #13.
+[dev-dependencies]
+mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "f622f99007c6ff9010df30e64d07a600159ef6fa" }
+mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "f622f99007c6ff9010df30e64d07a600159ef6fa" }
