@@ -1,4 +1,4 @@
-//! Pinned public API proof for MMORPG #339, not the runtime match migration (#13).
+//! Focused pinned MMORPG combat contract, alongside the composed runtime scenario.
 use mmorpg_core::{
     EntityRef, PlayerCombatPolicy, ZoneCommand, ZoneId, ZoneSimulation, greyhaven_vale,
 };

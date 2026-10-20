@@ -7,12 +7,11 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-physics-engine.workspace = true
-mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "b0cac946c07bc85b5290a68f9961e98a0f9a5f11" }
+mmorpg-core.workspace = true
 
 [lints]
 workspace = true
 
-# Public API proof for MMORPG #339. Runtime match composition remains #13.
+# Shared-codec consumer proofs use the same exact MMORPG revision as runtime.
 [dev-dependencies]
-mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "b0cac946c07bc85b5290a68f9961e98a0f9a5f11" }
+mmorpg-protocol.workspace = true

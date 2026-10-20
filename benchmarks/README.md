@@ -1,6 +1,6 @@
 # Full-capacity performance evidence
 
-This benchmark lane records two distinct forms of evidence for the deterministic 100-player workload:
+This benchmark lane now runs 100 real shared MMORPG characters through the composed zone (movement and storm evaluation, not a simultaneous combat workload). Historical standalone integer-simulator results do not describe this implementation. It records:
 
 - release-mode wall-clock cost per authoritative simulation tick;
 - encoded canonical and player-scoped projection bytes.
@@ -21,4 +21,4 @@ Timing is advisory. Hosted runner load, CPU frequency, thermal state and virtual
 
 Projection bytes are deterministic for identical source and workload. They are recorded here as performance evidence even though ordinary correctness tests separately enforce the protocol's explicit maximum-size contracts.
 
-This benchmark does not measure WebTransport throughput, end-to-end latency, concurrent multi-match capacity or fleet performance. Those remain separate transport/hosting scenarios.
+This benchmark does not measure WebTransport throughput, end-to-end latency, concurrent multi-match capacity or fleet performance. It also does not measure character rendering or animation, and is not evidence of 100-client readiness. Those remain separate scenarios.

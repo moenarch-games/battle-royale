@@ -24,7 +24,7 @@ authoritative commands
  battle-royale-core
         |
         v
-  physics-engine
+  mmorpg-core::ZoneSimulation (Rapier)
 ```
 
 ## Authority boundaries
@@ -45,10 +45,10 @@ The reusable `input-bindings` repository owns the mobile overlay editor and bind
 Owns only game-specific match truth:
 
 - phase progression and lobby closure;
-- accepted movement intent;
-- deterministic spawn slots;
+- lobby build selection and admission;
+- mode arena content;
 - safe-zone/storm schedule;
-- health, elimination and winner state;
+- terminal match elimination and winner state;
 - which match state is visible to a player.
 
 It does not own transport connection epochs, reconnect capabilities, TLS, host draining, replay storage, matchmaking or rendering.
@@ -66,9 +66,20 @@ Owns reusable runtime authority:
 
 The adapter converts bytes and delegates; it does not create a second scheduler or session registry.
 
-### physics-engine
+### mmorpg-core
 
-Owns movement integration and collision semantics. Battle Royale supplies player movement intent and reads authoritative body state. Physics algorithms must not be copied into the game crate.
+One pinned `ZoneSimulation` per match owns real maximum-level characters, equipment,
+abilities, health, attacks, guards, projectiles, status and Rapier movement. Battle
+Royale stores no second health or physical state. Its flat arena explicitly opts into
+ephemeral characters and free-for-all eligibility; the shared content fingerprint
+binds those choices, geometry and the ability catalog through recovery.
+
+The mode evaluates its existing integer storm schedule against the shared rounded
+physical positions and asks the zone to apply direct environmental damage. The zone
+owns health changes and normal death cleanup, with no fabricated combat source. The
+mode observes shared combat deaths before applying that tick's storm and records a
+terminal match elimination. It refuses spirit release and all in-life equipment/class
+changes. The zone stays frozen when the match finishes.
 
 ## Deterministic lifecycle
 
@@ -86,14 +97,16 @@ This prevents brief transport loss from becoming a second, accidental game-rule 
 
 ## Snapshot boundary
 
-Canonical snapshots contain every authoritative player plus private sequencing/movement state and are used for replay/recovery hashing.
+Canonical snapshots contain the complete shared zone plus ordered mode roster, phase, elimination and sequence state. There is one source of character truth. They are used for replay/recovery hashing and can be restored through `BattleRoyaleMatch::from_snapshot`.
 
-Player-scoped snapshots contain only the addressed player's allowed projection. The current first slice uses a bounded distance filter and always includes the addressed player. Future stealth, inventory or spectator policy belongs in this projection boundary, never in transport code.
+Player-scoped snapshots contain only the addressed player's allowed projection. The shared zone owns physical interest filtering and always includes the addressed player; the mode supplies its public match roster and outcome separately. Future stealth, inventory or spectator policy belongs in this projection boundary, never in transport code.
 
 ## Capacity
 
-The initial 100-player cap is a correctness bound, not a throughput claim. Raising it requires deterministic workload evidence for physics, tick work and per-player projection size. The current projection is intentionally simple O(n) over at most 100 players; a spatial index should be introduced from measured need rather than pre-emptively duplicating another repository's data structure.
+The initial 100-player cap is a correctness bound, not a throughput claim. Raising it requires deterministic workload evidence for physics, tick work and per-player projection size. The mode roster is bounded at 100 entries. Physical interest queries use the shared zone's existing index; do not add a competing Battle Royale spatial index. Headless capacity checks do not establish 100-client transport or rendering readiness.
 
 ## Persistence and external services
 
 Durable match results, accounts, parties, rankings and matchmaking use command/query boundaries outside the hot loop. External service retries must be idempotent and fenced with match/session identity. Event sourcing is not required: `game-server` replay/recovery already provides deterministic runtime evidence, while durable business state can use simpler persistence contracts.
+
+See [the composed protocol](PROTOCOL.md) for the version boundary and client contract.

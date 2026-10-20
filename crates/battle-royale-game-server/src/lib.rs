@@ -8,7 +8,7 @@ use game_server::{
 };
 
 pub const PINNED_GAME_SERVER_REVISION: &str = "769de47005cc37891011fc76ae183c18b7c5e0ae";
-pub const PINNED_PHYSICS_ENGINE_REVISION: &str = "c796ea382bdcb0276b9309e8a3cca34c8c28313b";
+pub const PINNED_MMORPG_REVISION: &str = "81306faec8a6a7ea3b4279d75f763c1135ca4a19";
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MatchHostBuildError {
@@ -169,10 +169,10 @@ impl GameSimulation for BattleRoyaleGameServerAdapter {
     }
 
     fn snapshot(&self) -> Result<SimulationSnapshot, SimulationError> {
-        let snapshot = self.simulation.snapshot();
+        let snapshot = self.simulation.snapshot().map_err(map_match_error)?;
         Ok(SimulationSnapshot::new(
             snapshot.tick,
-            encode_canonical_snapshot(&snapshot),
+            encode_canonical_snapshot(&snapshot).map_err(map_protocol_error)?,
         ))
     }
 
@@ -186,7 +186,7 @@ impl GameSimulation for BattleRoyaleGameServerAdapter {
             .map_err(map_match_error)?;
         Ok(SimulationSnapshot::new(
             snapshot.tick,
-            encode_snapshot(&snapshot),
+            encode_snapshot(&snapshot).map_err(map_protocol_error)?,
         ))
     }
 }
@@ -273,7 +273,7 @@ mod tests {
 
         assert_eq!(canonical.phase, MatchPhase::Combat);
         assert_eq!(canonical.players[0].last_sequence, 5);
-        assert!(canonical.players[0].position[0] > -3_600);
+        assert!(canonical.zone.players[0].position[0] > -3_600.0);
         assert_eq!(reconnected.player_id, first.player_id);
         assert_eq!(reconnected.connection_epoch, first.connection_epoch + 1);
     }
