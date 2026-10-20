@@ -12,10 +12,10 @@ The target imports a pinned `mmorpg-core` `ZoneSimulation` directly: it owns cha
 
 See the [Battle Royale Decision Atlas](docs/decisions/atlas.md), [shared PvP combat issue](https://github.com/moritzbrantner/mmorpg/issues/339), [max-level sandbox setup](https://github.com/moritzbrantner/mmorpg/issues/340), [first match integration](https://github.com/moritzbrantner/battle-royale/issues/13), and [MMORPG client entry](https://github.com/moritzbrantner/mmorpg/issues/341).
 
-## Pinned MMORPG combat contract (development only)
+## Pinned MMORPG combat and build contracts (development only)
 
 `battle-royale-core` has a public-API integration test against `mmorpg-core` and
-`mmorpg-protocol` at exact revision `f622f99007c6ff9010df30e64d07a600159ef6fa`
+`mmorpg-protocol` at exact revision `b0cac946c07bc85b5290a68f9961e98a0f9a5f11`
 ([MMORPG #339](https://github.com/moritzbrantner/mmorpg/issues/339)). It admits two
 players to an explicit arena, casts Firebolt, round-trips a canonical checkpoint
 mid-cast and verifies identical continuation through the real hit. It uses no private
@@ -25,10 +25,16 @@ MMORPG state or replacement combat calculation.
 cargo test -p battle-royale-core --test mmorpg_combat_contract --locked
 ```
 
-These are **development dependencies and a consumer contract proof**. The running
-match still uses the transitional implementation below; replacing it, max-level setup,
-match elimination/winner composition and real two-client play remain #13 and MMORPG
-#340/#341. This test does not make those roadmap items complete.
+`temporary_build_contract` additionally admits all three supported classes through
+`EphemeralCharacterBuild` at `MAX_PLAYER_LEVEL`, checks full legal health/resources and
+blocked durable capture, then round-trips and continues the whole arena checkpoint.
+It uses the same public core/protocol pin and no account or private-state mutation.
+
+These are **development dependencies and consumer contract proofs**. The running
+match still uses the transitional implementation below; replacing it, wiring admission
+and loadout selection, match elimination/winner composition and real two-client play
+remain #13 and MMORPG #341. MMORPG #340 supplies the tested temporary-build API.
+These proofs do not make the runtime roadmap items complete.
 
 ## Current implementation authority map
 
