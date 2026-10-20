@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+mod arena;
+
 use physics_engine::{BodyId, RigidBody, Vec3i, World, WorldConfig};
 use std::collections::BTreeMap;
 use std::error::Error;
