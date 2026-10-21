@@ -15,7 +15,7 @@ license = "MIT"
 publish = false
 
 [workspace.dependencies]
-game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "769de47005cc37891011fc76ae183c18b7c5e0ae" }
+game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "a87f46c6b494c8087b63ee4f47e9933c1778974b" }
 mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "81306faec8a6a7ea3b4279d75f763c1135ca4a19" }
 mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "81306faec8a6a7ea3b4279d75f763c1135ca4a19" }
 input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "cf0d89f0cc048cec865682926b15acb1b273e589" }
