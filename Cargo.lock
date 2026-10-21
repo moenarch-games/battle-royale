@@ -86,7 +86,7 @@ dependencies = [
 name = "battle-royale-core"
 version = "0.1.0"
 dependencies = [
- "mmorpg-core",
+ "mmorpg-core 0.1.0 (git+https://github.com/moritzbrantner/mmorpg.git?rev=14f882761a6401d4cf5e0149033b7ea57b30c7ef)",
  "mmorpg-protocol",
 ]
 
@@ -106,7 +106,7 @@ name = "battle-royale-protocol"
 version = "0.1.0"
 dependencies = [
  "battle-royale-core",
- "mmorpg-core",
+ "mmorpg-core 0.1.0 (git+https://github.com/moritzbrantner/mmorpg.git?rev=14f882761a6401d4cf5e0149033b7ea57b30c7ef)",
  "mmorpg-protocol",
 ]
 
@@ -694,6 +694,16 @@ dependencies = [
 [[package]]
 name = "mmorpg-core"
 version = "0.1.0"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=14f882761a6401d4cf5e0149033b7ea57b30c7ef#14f882761a6401d4cf5e0149033b7ea57b30c7ef"
+dependencies = [
+ "rapier3d",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "mmorpg-core"
+version = "0.1.0"
 source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=81306faec8a6a7ea3b4279d75f763c1135ca4a19#81306faec8a6a7ea3b4279d75f763c1135ca4a19"
 dependencies = [
  "rapier3d",
@@ -706,7 +716,7 @@ name = "mmorpg-protocol"
 version = "0.1.0"
 source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=81306faec8a6a7ea3b4279d75f763c1135ca4a19#81306faec8a6a7ea3b4279d75f763c1135ca4a19"
 dependencies = [
- "mmorpg-core",
+ "mmorpg-core 0.1.0 (git+https://github.com/moritzbrantner/mmorpg.git?rev=81306faec8a6a7ea3b4279d75f763c1135ca4a19)",
 ]
 
 [[package]]
