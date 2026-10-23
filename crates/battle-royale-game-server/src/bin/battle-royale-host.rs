@@ -58,6 +58,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         private_key_pem,
         route_prefix,
         drain_grace: Duration::from_millis(drain_grace_ms),
+        allowed_origins: None,
     };
     let status_config = MatchHostStatusConfig { port: status_port };
 
