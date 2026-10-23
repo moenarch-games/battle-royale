@@ -87,6 +87,7 @@ async fn two_real_clients_select_builds_fight_and_receive_the_same_winner() {
             private_key_pem: key,
             route_prefix: prefix,
             drain_grace: Duration::ZERO,
+            allowed_origins: None,
         };
         let (shutdown, receiver) = mpsc::channel(1);
         let server = tokio::spawn(serve_match_host_with_shutdown(
