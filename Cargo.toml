@@ -16,9 +16,9 @@ publish = false
 
 [workspace.dependencies]
 game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "0d6fbfc7246736f9ff45ab6146e5aa26f671330b" }
-mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "3258f86628e51ba3cf5394737d81c872a2e3dd12" }
-mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "3258f86628e51ba3cf5394737d81c872a2e3dd12" }
-input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "fb886035c5d64657cf035d84a7b69b371ff4e0d0" }
+mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "94ecd528f527f938a7c394804b13d1d36e6a2858" }
+mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "94ecd528f527f938a7c394804b13d1d36e6a2858" }
+input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "9884cf8c857779d399bc901323d95d42a54022cd" }
 battle-royale-core = { path = "crates/battle-royale-core" }
 battle-royale-protocol = { path = "crates/battle-royale-protocol" }
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "signal", "sync"] }

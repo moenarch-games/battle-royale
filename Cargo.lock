@@ -601,7 +601,7 @@ dependencies = [
 [[package]]
 name = "input-bindings-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/input-bindings.git?rev=fb886035c5d64657cf035d84a7b69b371ff4e0d0#fb886035c5d64657cf035d84a7b69b371ff4e0d0"
+source = "git+https://github.com/moritzbrantner/input-bindings.git?rev=9884cf8c857779d399bc901323d95d42a54022cd#9884cf8c857779d399bc901323d95d42a54022cd"
 dependencies = [
  "serde",
 ]
@@ -695,7 +695,7 @@ dependencies = [
 [[package]]
 name = "mmorpg-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=3258f86628e51ba3cf5394737d81c872a2e3dd12#3258f86628e51ba3cf5394737d81c872a2e3dd12"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=94ecd528f527f938a7c394804b13d1d36e6a2858#94ecd528f527f938a7c394804b13d1d36e6a2858"
 dependencies = [
  "rapier3d",
  "serde",
@@ -705,7 +705,7 @@ dependencies = [
 [[package]]
 name = "mmorpg-protocol"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=3258f86628e51ba3cf5394737d81c872a2e3dd12#3258f86628e51ba3cf5394737d81c872a2e3dd12"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=94ecd528f527f938a7c394804b13d1d36e6a2858#94ecd528f527f938a7c394804b13d1d36e6a2858"
 dependencies = [
  "mmorpg-core",
 ]
