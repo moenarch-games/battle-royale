@@ -273,7 +273,10 @@ mod tests {
 
         assert_eq!(canonical.phase, MatchPhase::Combat);
         assert_eq!(canonical.players[0].last_sequence, 5);
-        assert!(canonical.zone.players[0].position[0] > -3_600.0);
+        assert!(
+            canonical.zone.players[0].position[0]
+                > battle_royale_core::arena::spawn_grid().origin[0] as f32
+        );
         assert_eq!(reconnected.player_id, first.player_id);
         assert_eq!(reconnected.connection_epoch, first.connection_epoch + 1);
     }

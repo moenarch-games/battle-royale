@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-mod arena;
+pub mod arena;
 
 use mmorpg_core::{CanonicalZoneSnapshot, ZoneId, ZoneSimulation, ZoneSnapshot};
 pub use mmorpg_core::{

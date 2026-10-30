@@ -70,7 +70,8 @@ The adapter converts bytes and delegates; it does not create a second scheduler 
 
 One pinned `ZoneSimulation` per match owns real maximum-level characters, equipment,
 abilities, health, attacks, guards, projectiles, status and Rapier movement. Battle
-Royale stores no second health or physical state. Its flat arena explicitly opts into
+Royale stores no second health or physical state. Its fortress arena
+([ARENA.md](ARENA.md)) is shared zone content (boxes, ramps and lifts) and explicitly opts into
 ephemeral characters and free-for-all eligibility; the shared content fingerprint
 binds those choices, geometry and the ability catalog through recovery.
 
