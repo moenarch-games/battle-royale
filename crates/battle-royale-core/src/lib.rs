@@ -323,15 +323,16 @@ impl BattleRoyaleMatch {
                     command,
                     ZoneCommand::Move { .. }
                         | ZoneCommand::Jump
+                        | ZoneCommand::Roll
                         | ZoneCommand::SelectTarget(_)
                         | ZoneCommand::Chat { .. }
                         | ZoneCommand::Emote(_)
                 );
                 let combat = matches!(
                     command,
-                    ZoneCommand::StartAttack
-                        | ZoneCommand::StopAttack
+                    ZoneCommand::Swing { .. }
                         | ZoneCommand::UseAbility { .. }
+                        | ZoneCommand::ReleaseAbility { .. }
                         | ZoneCommand::DirectedStrike { .. }
                         | ZoneCommand::Guard { .. }
                         | ZoneCommand::CancelCast

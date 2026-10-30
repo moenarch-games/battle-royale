@@ -36,6 +36,23 @@ fn shared_hit_elimination_winner_duplicate_reconnect_and_restore_form_one_match(
     }
     let before = decode_canonical_snapshot(&runtime.snapshot().unwrap().payload).unwrap();
     let health = before.zone.players[1].combat.health;
+    // Offensive abilities fire where the caster faces (free aim), so turn toward the victim.
+    let [from, to] = [0, 1].map(|index| before.zone.players[index].position);
+    let yaw = (to[0] - from[0]).atan2(to[2] - from[2]) / std::f32::consts::TAU * 65_536.0;
+    let face = MatchCommand::Character(ZoneCommand::Move {
+        forward: 0,
+        strafe: 0,
+        facing: (yaw.round() as i32).rem_euclid(65_536) as u16,
+    });
+    runtime
+        .submit_command(
+            attacker.player_id,
+            attacker.connection_epoch,
+            2,
+            &encode_command(face),
+        )
+        .unwrap();
+    runtime.advance_tick().unwrap();
     let firebolt = MatchCommand::Character(ZoneCommand::UseAbility {
         ability: 9,
         target: Some(battle_royale_core::EntityRef::Player(victim.player_id)),
@@ -44,7 +61,7 @@ fn shared_hit_elimination_winner_duplicate_reconnect_and_restore_form_one_match(
         .submit_command(
             attacker.player_id,
             attacker.connection_epoch,
-            2,
+            3,
             &encode_command(firebolt),
         )
         .unwrap();
@@ -53,7 +70,7 @@ fn shared_hit_elimination_winner_duplicate_reconnect_and_restore_form_one_match(
             .submit_command(
                 attacker.player_id,
                 attacker.connection_epoch,
-                2,
+                3,
                 &encode_command(firebolt)
             )
             .unwrap(),
@@ -79,9 +96,9 @@ fn shared_hit_elimination_winner_duplicate_reconnect_and_restore_form_one_match(
     assert_eq!(reconnected.player_id, attacker.player_id);
     assert_eq!(reconnected.connection_epoch, attacker.connection_epoch + 1);
     let mut hit = false;
-    let mut sequence = 3;
-    for elapsed in 0..800 {
-        if elapsed > 0 && elapsed % 90 == 0 {
+    let mut sequence = 4;
+    for elapsed in 0..1_600 {
+        if elapsed > 0 && elapsed % 30 == 0 {
             restored
                 .submit_command(
                     attacker.player_id,
