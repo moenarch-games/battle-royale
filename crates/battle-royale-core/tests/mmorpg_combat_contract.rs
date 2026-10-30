@@ -19,9 +19,30 @@ fn pinned_mmorpg_combat_cast_hit_and_recovery_are_usable_by_the_mode() {
     zone.advance_tick().unwrap();
     assert!(zone.players_are_hostile(1, 2));
     let health = zone.snapshot_for_player(2).unwrap().viewer.health;
+    // Offensive abilities fire where the caster faces (free aim), so turn toward the foe.
+    let players = zone.snapshot().unwrap().players;
+    let [from, to] = [1, 2].map(|id| {
+        players
+            .iter()
+            .find(|player| player.player_id == id)
+            .unwrap()
+            .position
+    });
+    let yaw = (to[0] - from[0]).atan2(to[2] - from[2]) / std::f32::consts::TAU * 65_536.0;
     zone.apply_command(
         1,
         2,
+        ZoneCommand::Move {
+            forward: 0,
+            strafe: 0,
+            facing: (yaw.round() as i32).rem_euclid(65_536) as u16,
+        },
+    )
+    .unwrap();
+    zone.advance_tick().unwrap();
+    zone.apply_command(
+        1,
+        3,
         ZoneCommand::UseAbility {
             ability: 9,
             target: Some(EntityRef::Player(2)),

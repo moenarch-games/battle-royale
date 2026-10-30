@@ -1,13 +1,9 @@
 //! Mode-authored arena geometry; all character rules belong to the shared zone.
 use mmorpg_core::{
-    ABILITY_CATALOG_REVISION, CharacterPersistence, PlayerCombatPolicy, SpawnGrid, StaticCollider,
-    ZoneContent, ZoneDefinition, ZoneError,
+    CharacterPersistence, PlayerCombatPolicy, SpawnGrid, StaticCollider, ZoneContent,
+    ZoneDefinition, ZoneError,
 };
 use std::sync::{Arc, OnceLock};
-
-/// This identity is independent of match identity. The complete content fingerprint
-/// binds recovery to the arena, shared ability catalog and ephemeral PvP policies.
-const ARENA_CONTENT_REVISION: u64 = 2;
 
 pub(crate) fn content() -> Result<Arc<ZoneContent>, ZoneError> {
     static CONTENT: OnceLock<Result<Arc<ZoneContent>, ZoneError>> = OnceLock::new();
@@ -18,7 +14,6 @@ fn build_content() -> Result<Arc<ZoneContent>, ZoneError> {
     // Keep the existing flat arena and 8 m spawn separation. Sixteen columns
     // also keep every spawn slot validated by the shared zone inside its bounds.
     let definition = ZoneDefinition::with_spawn_grid(
-        ARENA_CONTENT_REVISION,
         [0, -1, 0],
         SpawnGrid {
             origin: [-3_600, -3_600],
@@ -32,7 +27,7 @@ fn build_content() -> Result<Arc<ZoneContent>, ZoneError> {
         }],
     )?;
     let content = ZoneContent::from_definition(definition)
-        .with_creature_abilities(ABILITY_CATALOG_REVISION, Vec::new())?
+        .with_creature_abilities(Vec::new())?
         .with_character_persistence(CharacterPersistence::Ephemeral)
         .with_player_combat(PlayerCombatPolicy::FreeForAll);
     Ok(Arc::new(content))
