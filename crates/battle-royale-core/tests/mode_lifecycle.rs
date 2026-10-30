@@ -37,7 +37,7 @@ fn lobby_selection_movement_and_phase_lock_share_real_character_state() {
         .unwrap();
     simulation.advance_tick().unwrap();
     let before = simulation.snapshot().unwrap();
-    assert!(before.zone.players[0].position[0] > -3600.0);
+    assert!(before.zone.players[0].position[0] > arena::spawn_grid().origin[0] as f32);
     assert!(
         simulation
             .apply_command(1, 2, MatchCommand::SetMovement { x: 0, z: 1 })

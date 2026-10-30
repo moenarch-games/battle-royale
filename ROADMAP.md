@@ -29,6 +29,8 @@ The checked items below distinguish the composed authoritative match and real tw
 - [x] Admit max-level MMORPG character builds with legal level-appropriate gear, without modifying durable MMO progression ([mmorpg #340](https://github.com/moritzbrantner/mmorpg/issues/340)).
 - [x] Replace duplicate player health, movement and physics with one authoritative `mmorpg-core::ZoneSimulation` per match; retain only match-specific storm, phase, elimination and winner logic ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
 - [x] Preserve deterministic command ordering and complete match + zone recovery through the existing `game-server` host ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
+- [x] Author the symmetric multilevel fortress arena as graybox shared zone content with physical traversal: courtyard, keep interior, ramps, towers, rooftops, bridges and traversal-only lifts ([#31](https://github.com/moenarch-games/battle-royale/issues/31), [ARENA.md](docs/ARENA.md)).
+- [ ] Render and traverse the fortress in the MMORPG browser, hosted and in local practice ([mmorpg #552](https://github.com/moenarch-games/mmorpg/issues/552)); replace graybox with authored art.
 - [ ] Play as full-size MMORPG characters with a friend in one real hosted match using the MMORPG's presentation; change class/gear only between lives ([mmorpg #341](https://github.com/moritzbrantner/mmorpg/issues/341)).
 - [ ] Revalidate scale/performance on real MMORPG character combat and animation before claiming large-player readiness.
 
