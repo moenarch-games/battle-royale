@@ -1,13 +1,18 @@
 use std::hint::black_box;
 use std::time::Instant;
 
-use battle_royale_core::{BattleMatchId, MAX_PLAYERS_PER_MATCH, MatchCommand, MatchPhase};
+use battle_royale_core::{
+    BattleMatchId, BattleRoyaleMatch, CanonicalMatchSnapshot, MAX_PLAYERS_PER_MATCH, MatchCommand,
+    MatchPhase,
+};
 use battle_royale_game_server::BattleRoyaleGameServerAdapter;
 use battle_royale_protocol::encode_command;
 use game_server::GameSimulation;
 
 const MATCH_ID: u64 = 0x400;
-const PRE_MEASURE_TICKS: usize = 192;
+/// Ticks of active storm before measurement starts, so every batch evaluates storm damage.
+/// The warm-up itself follows the storm clock rather than a fixed tick count.
+const STORM_ACTIVE_MARGIN_TICKS: u64 = 32;
 const TICKS_PER_BATCH: usize = 32;
 const WARMUP_BATCHES: usize = 5;
 const MEASURED_BATCHES: usize = 31;
@@ -41,25 +46,37 @@ fn full_match() -> BattleRoyaleGameServerAdapter {
     simulation
 }
 
-fn prepared_match() -> BattleRoyaleGameServerAdapter {
+/// Plays the full match into combat until the storm has been damaging for
+/// `STORM_ACTIVE_MARGIN_TICKS`, once, and returns its canonical snapshot.
+fn prepared_snapshot() -> CanonicalMatchSnapshot {
     let mut simulation = full_match();
-    for _ in 0..PRE_MEASURE_TICKS {
+    while !simulation.simulation().storm_snapshot().damage_active {
+        simulation.advance_tick().unwrap();
+    }
+    for _ in 0..STORM_ACTIVE_MARGIN_TICKS {
         simulation.advance_tick().unwrap();
     }
 
-    assert_eq!(
-        simulation.simulation().player_count(),
-        MAX_PLAYERS_PER_MATCH
-    );
-    assert_eq!(simulation.simulation().alive_count(), MAX_PLAYERS_PER_MATCH);
-    assert_eq!(simulation.simulation().phase(), MatchPhase::Combat);
-    assert!(simulation.simulation().storm_snapshot().damage_active);
+    let simulation = simulation.into_simulation();
+    assert_eq!(simulation.player_count(), MAX_PLAYERS_PER_MATCH);
+    assert_eq!(simulation.alive_count(), MAX_PLAYERS_PER_MATCH);
+    assert_eq!(simulation.phase(), MatchPhase::Combat);
+    assert!(simulation.storm_snapshot().damage_active);
 
-    simulation
+    let snapshot = simulation.snapshot().unwrap();
+    let restored = BattleRoyaleMatch::from_snapshot(snapshot.clone()).unwrap();
+    assert_eq!(restored.snapshot().unwrap(), snapshot);
+    snapshot
 }
 
-fn tick_batch_ns() -> u128 {
-    let mut simulation = prepared_match();
+fn prepared_match(snapshot: &CanonicalMatchSnapshot) -> BattleRoyaleGameServerAdapter {
+    BattleRoyaleGameServerAdapter::from_simulation(
+        BattleRoyaleMatch::from_snapshot(snapshot.clone()).unwrap(),
+    )
+}
+
+fn tick_batch_ns(snapshot: &CanonicalMatchSnapshot) -> u128 {
+    let mut simulation = prepared_match(snapshot);
     let started = Instant::now();
 
     for _ in 0..TICKS_PER_BATCH {
@@ -76,8 +93,8 @@ fn tick_batch_ns() -> u128 {
     elapsed
 }
 
-fn projection_sizes() -> (usize, usize, usize, usize) {
-    let simulation = prepared_match();
+fn projection_sizes(snapshot: &CanonicalMatchSnapshot) -> (usize, usize, usize, usize) {
+    let simulation = prepared_match(snapshot);
     let canonical_bytes = simulation.snapshot().unwrap().payload.len();
 
     let mut total_player_bytes = 0usize;
@@ -100,19 +117,22 @@ fn projection_sizes() -> (usize, usize, usize, usize) {
 }
 
 fn main() {
+    let snapshot = prepared_snapshot();
+    let pre_measure_ticks = snapshot.tick;
+
     for _ in 0..WARMUP_BATCHES {
-        black_box(tick_batch_ns());
+        black_box(tick_batch_ns(&snapshot));
     }
 
     let tick_batch_ns = (0..MEASURED_BATCHES)
-        .map(|_| tick_batch_ns())
+        .map(|_| tick_batch_ns(&snapshot))
         .collect::<Vec<_>>();
     let (
         canonical_bytes,
         player_projection_bytes_total,
         player_projection_bytes_max,
         player_projection_bytes_min,
-    ) = projection_sizes();
+    ) = projection_sizes(&snapshot);
 
     let samples = tick_batch_ns
         .iter()
@@ -139,7 +159,7 @@ fn main() {
         ),
         MAX_PLAYERS_PER_MATCH,
         MATCH_ID,
-        PRE_MEASURE_TICKS,
+        pre_measure_ticks,
         TICKS_PER_BATCH,
         WARMUP_BATCHES,
         MEASURED_BATCHES,
