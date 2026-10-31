@@ -62,6 +62,16 @@ impl BattleRoyaleGameServerAdapter {
         }
     }
 
+    /// Hosts an existing match, such as one restored from a canonical snapshot. Sheet
+    /// acknowledgements start empty, as after recovery, so the next projections resend.
+    #[must_use]
+    pub fn from_simulation(simulation: BattleRoyaleMatch) -> Self {
+        Self {
+            simulation,
+            sheet_acks: BTreeMap::new(),
+        }
+    }
+
     #[must_use]
     pub fn simulation(&self) -> &BattleRoyaleMatch {
         &self.simulation
