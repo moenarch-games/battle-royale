@@ -1,14 +1,14 @@
 #![forbid(unsafe_code)]
 
 use battle_royale_core::{BattleMatchId, BattleRoyaleMatch, MAX_PLAYERS_PER_MATCH, TICK_HZ};
-use battle_royale_protocol::{decode_command, encode_canonical_snapshot, encode_snapshot};
+use battle_royale_protocol::{
+    SheetRevisions, decode_command, encode_canonical_snapshot, encode_snapshot,
+};
 use game_server::{
     GameSimulation, HostError, MatchHost, MatchId, MatchIdError, MatchRuntime, SimulationError,
     SimulationSnapshot, SnapshotScope,
 };
-
-pub const PINNED_GAME_SERVER_REVISION: &str = "769de47005cc37891011fc76ae183c18b7c5e0ae";
-pub const PINNED_MMORPG_REVISION: &str = "81306faec8a6a7ea3b4279d75f763c1135ca4a19";
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MatchHostBuildError {
@@ -47,6 +47,10 @@ impl std::error::Error for MatchHostBuildError {
 
 pub struct BattleRoyaleGameServerAdapter {
     simulation: BattleRoyaleMatch,
+    /// The zone sheet revisions each client last acknowledged on an applied command
+    /// (mmorpg #544), so a projection carries a sheet only while that client lacks it.
+    /// Projection-only: recovery rebuilds it by replay or starts empty, which resends.
+    sheet_acks: BTreeMap<game_server::PlayerId, SheetRevisions>,
 }
 
 impl BattleRoyaleGameServerAdapter {
@@ -54,6 +58,7 @@ impl BattleRoyaleGameServerAdapter {
     pub fn new(match_id: BattleMatchId) -> Self {
         Self {
             simulation: BattleRoyaleMatch::new(match_id),
+            sheet_acks: BTreeMap::new(),
         }
     }
 
@@ -145,6 +150,7 @@ impl GameSimulation for BattleRoyaleGameServerAdapter {
     }
 
     fn remove_player(&mut self, player_id: game_server::PlayerId) -> bool {
+        self.sheet_acks.remove(&player_id);
         self.simulation.remove_player(player_id)
     }
 
@@ -154,10 +160,15 @@ impl GameSimulation for BattleRoyaleGameServerAdapter {
         sequence: u32,
         payload: &[u8],
     ) -> Result<(), SimulationError> {
-        let command = decode_command(payload).map_err(map_protocol_error)?;
+        let envelope = decode_command(payload).map_err(map_protocol_error)?;
         self.simulation
-            .apply_command(player_id, sequence, command)
-            .map_err(map_match_error)
+            .apply_command(player_id, sequence, envelope.command)
+            .map_err(map_match_error)?;
+        // Only an applied command counts, so replay rebuilds the same acknowledgements.
+        if let Some(sheets) = envelope.sheets {
+            self.sheet_acks.insert(player_id, sheets);
+        }
+        Ok(())
     }
 
     fn advance_tick(&mut self) -> Result<(), SimulationError> {
@@ -184,9 +195,10 @@ impl GameSimulation for BattleRoyaleGameServerAdapter {
             .simulation
             .snapshot_for_player(player_id)
             .map_err(map_match_error)?;
+        let acknowledged = self.sheet_acks.get(&player_id).copied().unwrap_or_default();
         Ok(SimulationSnapshot::new(
             snapshot.tick,
-            encode_snapshot(&snapshot).map_err(map_protocol_error)?,
+            encode_snapshot(&snapshot, acknowledged).map_err(map_protocol_error)?,
         ))
     }
 }
@@ -236,6 +248,34 @@ mod tests {
         assert_eq!(canonical.players[0].last_sequence, 9);
         assert_eq!(visible.acknowledged_sequence, 9);
         assert_eq!(visible.players.len(), 2);
+    }
+
+    #[test]
+    fn adapter_records_sheet_acknowledgements_from_applied_commands() {
+        let mut adapter = BattleRoyaleGameServerAdapter::new(BattleMatchId::new(8));
+        adapter.add_player(1).unwrap();
+        adapter.add_player(2).unwrap();
+        let sheets = SheetRevisions {
+            inventory: 1,
+            quests: 1,
+            loot: 1,
+            abilities: 1,
+        };
+        let jump = battle_royale_core::ZoneCommand::Jump;
+        adapter
+            .apply_command(
+                1,
+                1,
+                &battle_royale_protocol::encode_acknowledged_command(sheets, jump),
+            )
+            .unwrap();
+        assert_eq!(adapter.sheet_acks.get(&1), Some(&sheets));
+        // A command without an acknowledgement keeps the last one.
+        let payload = encode_command(MatchCommand::SetMovement { x: 1, z: 0 });
+        adapter.apply_command(1, 2, &payload).unwrap();
+        assert_eq!(adapter.sheet_acks.get(&1), Some(&sheets));
+        assert!(adapter.remove_player(1));
+        assert_eq!(adapter.sheet_acks.get(&1), None);
     }
 
     #[test]

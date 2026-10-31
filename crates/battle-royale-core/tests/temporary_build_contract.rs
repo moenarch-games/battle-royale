@@ -4,6 +4,7 @@ use mmorpg_core::{
     PlayerClass, PlayerCombatPolicy, Sex, ZoneId, ZoneSimulation, greyhaven_vale,
 };
 use std::sync::Arc;
+use strum::VariantArray;
 
 #[test]
 fn every_class_can_enter_as_a_temporary_max_level_build_and_restore() {
@@ -13,7 +14,7 @@ fn every_class_can_enter_as_a_temporary_max_level_build_and_restore() {
             .with_character_persistence(CharacterPersistence::Ephemeral),
     );
     let mut zone = ZoneSimulation::with_content(ZoneId::new(100), Arc::clone(&content)).unwrap();
-    for (index, class) in PlayerClass::ALL.into_iter().enumerate() {
+    for (index, class) in PlayerClass::VARIANTS.iter().copied().enumerate() {
         let player = index as u32 + 1;
         let choice = ClassChoice {
             class,

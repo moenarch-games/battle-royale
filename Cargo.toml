@@ -16,11 +16,13 @@ publish = false
 
 [workspace.dependencies]
 game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "043867333bbfd880d4ef3484d57fd7199d3b6f2b" }
-mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "6d744b799b1ab43c514cbddcf6842ae9ac8194e5" }
-mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "6d744b799b1ab43c514cbddcf6842ae9ac8194e5" }
+mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "fc65842d76ea65d12f31f2349ba0765e180bd0bb" }
+mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "fc65842d76ea65d12f31f2349ba0765e180bd0bb" }
 input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "001cd01c7f25898a1080fb7e200482bbfb8060d5" }
 battle-royale-core = { path = "crates/battle-royale-core" }
 battle-royale-protocol = { path = "crates/battle-royale-protocol" }
+# Test-only: iterates mmorpg-core's `PlayerClass::VARIANTS`.
+strum = "0.28.0"
 tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "signal", "sync"] }
 
 [workspace.lints.rust]

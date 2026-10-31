@@ -15,13 +15,18 @@ pub const MAX_PLAYERS_PER_MATCH: usize = 100;
 pub const MIN_PLAYERS_TO_START: usize = 2;
 pub const LOBBY_COUNTDOWN_TICKS: u64 = 60;
 pub const DROP_DURATION_TICKS: u64 = 90;
-pub const STORM_DELAY_TICKS: u64 = 90;
-pub const STORM_SHRINK_DURATION_TICKS: u64 = 900;
+/// Combat before the storm starts closing (60 s).
+pub const STORM_DELAY_TICKS: u64 = 60 * TICK_HZ as u64;
+/// How long the storm takes to close to its final radius (120 s). With the delay, it reaches
+/// no spawn slot of the fortress lattice in the first 2 minutes of combat (about 136 s at
+/// the farthest slot from any match's centre), so a fight between spawned players ends on
+/// its own terms rather than in the storm.
+pub const STORM_SHRINK_DURATION_TICKS: u64 = 120 * TICK_HZ as u64;
 pub const INITIAL_STORM_RADIUS_UNITS: i32 = 50_000;
 pub const FINAL_STORM_RADIUS_UNITS: i32 = 2_000;
 pub const STORM_DAMAGE_PER_TICK: u32 = 2;
 pub const SNAPSHOT_SCHEMA_VERSION: u16 = 2;
-pub const RULESET_REVISION: u64 = 2;
+pub const RULESET_REVISION: u64 = 3;
 const ARENA_ZONE: ZoneId = ZoneId::new(100);
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -615,10 +620,9 @@ impl BattleRoyaleMatch {
     }
     #[must_use]
     pub fn storm_snapshot(&self) -> StormSnapshot {
-        let center = Self::storm_center(self.match_id);
         if self.phase != MatchPhase::Combat && self.phase != MatchPhase::Finished {
             return StormSnapshot {
-                center,
+                center: Self::storm_center(self.match_id),
                 radius: INITIAL_STORM_RADIUS_UNITS,
                 damage_active: false,
             };
@@ -627,7 +631,13 @@ impl BattleRoyaleMatch {
         let combat_started_tick = self
             .combat_started_tick
             .expect("combat and finished phases retain their combat start tick");
-        let elapsed = self.tick.saturating_sub(combat_started_tick);
+        Self::storm_after(self.match_id, self.tick.saturating_sub(combat_started_tick))
+    }
+
+    /// The storm of match `match_id` when `elapsed` ticks of combat have passed.
+    #[must_use]
+    pub fn storm_after(match_id: BattleMatchId, elapsed: u64) -> StormSnapshot {
+        let center = Self::storm_center(match_id);
         if elapsed <= STORM_DELAY_TICKS {
             return StormSnapshot {
                 center,

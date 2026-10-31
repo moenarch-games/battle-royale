@@ -140,14 +140,31 @@ async fn two_real_clients_select_builds_fight_and_receive_the_same_winner() {
             ability: 9,
             target: Some(EntityRef::Player(second.player_id)),
         });
-        let mut sequence = 2;
-        let mut last_cast = 0;
+        // Offensive abilities fire where the caster faces (free aim), so turn toward the victim
+        // first; neither character moves afterwards.
+        let view = snapshot(&attacker).await;
+        let position = |id| {
+            view.zone
+                .entities
+                .iter()
+                .find(|entity| entity.id == id)
+                .map(|entity| entity.position.map(|axis| axis as f32))
+                .unwrap()
+        };
+        let [from, to] = [first.player_id, second.player_id].map(position);
+        let yaw = (to[0] - from[0]).atan2(to[2] - from[2]) / std::f32::consts::TAU * 65_536.0;
+        let face = MatchCommand::Character(ZoneCommand::Move {
+            forward: 0,
+            strafe: 0,
+            facing: (yaw.round() as i32).rem_euclid(65_536) as u16,
+        });
+        send(&attacker, 2, face);
+        let mut sequence = 3;
+        let mut last_cast = view.tick;
         let mut hit = false;
         loop {
             let view = snapshot(&attacker).await;
-            if view.phase == MatchPhase::Combat
-                && (last_cast == 0 || view.tick.saturating_sub(last_cast) >= 90)
-            {
+            if view.phase == MatchPhase::Combat && view.tick.saturating_sub(last_cast) >= 90 {
                 send(&attacker, sequence, firebolt);
                 sequence += 1;
                 last_cast = view.tick;
