@@ -15,10 +15,10 @@ license = "MIT"
 publish = false
 
 [workspace.dependencies]
-game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "043867333bbfd880d4ef3484d57fd7199d3b6f2b" }
-mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "fc65842d76ea65d12f31f2349ba0765e180bd0bb" }
-mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "fc65842d76ea65d12f31f2349ba0765e180bd0bb" }
-input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "001cd01c7f25898a1080fb7e200482bbfb8060d5" }
+game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "57d338546bcbd7046aafddc23f37612a33b7ca5f" }
+mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "e7d68a7c79f8178cc7a84af07311516cbe399cc5" }
+mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "e7d68a7c79f8178cc7a84af07311516cbe399cc5" }
+input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "3b0d6698de3c8e48d612e7b73bc6956dd1da1d05" }
 battle-royale-core = { path = "crates/battle-royale-core" }
 battle-royale-protocol = { path = "crates/battle-royale-protocol" }
 # Test-only: iterates mmorpg-core's `PlayerClass::VARIANTS`.
