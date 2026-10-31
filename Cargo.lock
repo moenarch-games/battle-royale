@@ -695,7 +695,7 @@ dependencies = [
 [[package]]
 name = "mmorpg-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=0fd6229f8fde83532421abb44ea996d5df937c21#0fd6229f8fde83532421abb44ea996d5df937c21"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=6d744b799b1ab43c514cbddcf6842ae9ac8194e5#6d744b799b1ab43c514cbddcf6842ae9ac8194e5"
 dependencies = [
  "rapier3d",
  "serde",
@@ -705,7 +705,7 @@ dependencies = [
 [[package]]
 name = "mmorpg-protocol"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=0fd6229f8fde83532421abb44ea996d5df937c21#0fd6229f8fde83532421abb44ea996d5df937c21"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=6d744b799b1ab43c514cbddcf6842ae9ac8194e5#6d744b799b1ab43c514cbddcf6842ae9ac8194e5"
 dependencies = [
  "mmorpg-core",
 ]
