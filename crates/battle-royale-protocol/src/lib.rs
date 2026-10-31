@@ -4,9 +4,11 @@ use battle_royale_core::{
     BattleMatchId, CanonicalMatchSnapshot, CanonicalPlayerSnapshot, EliminationCause,
     MAX_PLAYERS_PER_MATCH, MatchCommand, MatchPhase, MatchSnapshot, PlayerSnapshot, StormSnapshot,
 };
+use mmorpg_core::ZoneCommand;
 use mmorpg_core::{
     ClassChoice, EQUIPMENT_SLOTS, EphemeralCharacterBuild, ItemId, PlayerClass, Sex,
 };
+pub use mmorpg_protocol::SheetRevisions;
 use std::{error::Error, fmt};
 
 pub const PROTOCOL_VERSION: u16 = 2;
@@ -60,11 +62,34 @@ pub fn encode_command(command: MatchCommand) -> Vec<u8> {
     }
     bytes
 }
-pub fn decode_command(payload: &[u8]) -> Result<MatchCommand, ProtocolError> {
+/// A command datagram as the host reads it: the command and, for a character command the
+/// client wrapped with [`mmorpg_protocol::encode_acknowledged_command`], the sheet revisions
+/// it holds (mmorpg #544).
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CommandEnvelope {
+    pub command: MatchCommand,
+    pub sheets: Option<SheetRevisions>,
+}
+
+/// A character command wrapped with the sheet revisions the client holds.
+#[must_use]
+pub fn encode_acknowledged_command(sheets: SheetRevisions, command: ZoneCommand) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    write_u16(&mut bytes, PROTOCOL_VERSION);
+    bytes.push(3);
+    bytes.extend_from_slice(&mmorpg_protocol::encode_acknowledged_command(
+        sheets,
+        &mmorpg_protocol::encode_command(command),
+    ));
+    bytes
+}
+
+pub fn decode_command(payload: &[u8]) -> Result<CommandEnvelope, ProtocolError> {
     let mut cursor = Cursor::new(payload);
     if cursor.read_u16()? != PROTOCOL_VERSION {
         return Err(ProtocolError::new("unsupported command protocol version"));
     }
+    let mut sheets = None;
     let command = match cursor.read_u8()? {
         1 => {
             let x = cursor.read_u8()? as i8;
@@ -93,14 +118,16 @@ pub fn decode_command(payload: &[u8]) -> Result<MatchCommand, ProtocolError> {
         }
         3 => {
             let remaining = cursor.bytes.len() - cursor.offset;
-            MatchCommand::Character(
-                mmorpg_protocol::decode_command(cursor.take(remaining)?).map_err(shared_error)?,
-            )
+            let envelope = mmorpg_protocol::decode_command_envelope(cursor.take(remaining)?)
+                .map_err(shared_error)?;
+            // The mode judges every intent on arrival; an observed tick (#415) is not used.
+            sheets = envelope.sheets;
+            MatchCommand::Character(envelope.command)
         }
         _ => return Err(ProtocolError::new("unsupported command kind")),
     };
     cursor.finish()?;
-    Ok(command)
+    Ok(CommandEnvelope { command, sheets })
 }
 
 pub fn encode_canonical_snapshot(
@@ -154,8 +181,16 @@ pub fn decode_canonical_snapshot(payload: &[u8]) -> Result<CanonicalMatchSnapsho
         zone,
     })
 }
-pub fn encode_snapshot(snapshot: &MatchSnapshot) -> Result<Vec<u8>, ProtocolError> {
-    let zone = mmorpg_protocol::encode_snapshot(&snapshot.zone).map_err(shared_error)?;
+/// The player projection, carrying the zone sheets whose revision differs from the
+/// client's `acknowledged` ones (mmorpg #544). The zone section is budget-packed: entities
+/// beyond one datagram are omitted by relevance priority.
+pub fn encode_snapshot(
+    snapshot: &MatchSnapshot,
+    acknowledged: SheetRevisions,
+) -> Result<Vec<u8>, ProtocolError> {
+    let zone = mmorpg_protocol::pack_snapshot_acknowledged(&snapshot.zone, acknowledged)
+        .map_err(shared_error)?
+        .payload;
     let mut bytes = Vec::new();
     bytes.extend_from_slice(&PLAYER_MAGIC);
     write_common_header(&mut bytes, CommonHeader::from(snapshot));
@@ -482,7 +517,7 @@ impl<'a> Cursor<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use battle_royale_core::{BattleRoyaleMatch, ZoneCommand};
+    use battle_royale_core::BattleRoyaleMatch;
     #[test]
     fn command_envelopes_preserve_shared_intents_and_validate_builds() {
         let build = EphemeralCharacterBuild::standard(ClassChoice {
@@ -499,7 +534,13 @@ mod tests {
             }),
         ] {
             let encoded = encode_command(command);
-            assert_eq!(decode_command(&encoded).unwrap(), command);
+            assert_eq!(
+                decode_command(&encoded).unwrap(),
+                CommandEnvelope {
+                    command,
+                    sheets: None
+                }
+            );
             let mut trailing = encoded.clone();
             trailing.push(0);
             assert!(decode_command(&trailing).is_err());
@@ -511,6 +552,51 @@ mod tests {
             decode_command(&[1, 0, 1, 0, 0]).is_err(),
             "old commands fail closed"
         );
+    }
+    #[test]
+    fn character_commands_carry_the_sheet_revisions_the_client_holds() {
+        let sheets = SheetRevisions {
+            inventory: 3,
+            quests: 0,
+            loot: 1,
+            abilities: 7,
+        };
+        let command = ZoneCommand::UseAbility {
+            ability: 9,
+            target: Some(mmorpg_core::EntityRef::Player(2)),
+        };
+        let encoded = encode_acknowledged_command(sheets, command);
+        assert_eq!(
+            decode_command(&encoded).unwrap(),
+            CommandEnvelope {
+                command: MatchCommand::Character(command),
+                sheets: Some(sheets)
+            }
+        );
+        let mut trailing = encoded;
+        trailing.push(0);
+        assert!(decode_command(&trailing).is_err());
+    }
+    #[test]
+    fn projections_leave_out_the_sheets_a_client_acknowledged() {
+        let mut simulation = BattleRoyaleMatch::new(BattleMatchId::new(33));
+        simulation.add_player(1).unwrap();
+        simulation.add_player(2).unwrap();
+        let visible = simulation.snapshot_for_player(1).unwrap();
+        let mut decoder = mmorpg_protocol::SnapshotDecoder::new();
+        decoder
+            .decode(
+                &mmorpg_protocol::pack_snapshot(&visible.zone)
+                    .unwrap()
+                    .payload,
+            )
+            .unwrap();
+        let held = decoder.revisions();
+        assert_ne!(held, SheetRevisions::default());
+        let full = encode_snapshot(&visible, SheetRevisions::default()).unwrap();
+        let quiet = encode_snapshot(&visible, held).unwrap();
+        assert!(quiet.len() < full.len());
+        assert_eq!(decode_snapshot(&quiet).unwrap().players, visible.players);
     }
     #[test]
     fn complete_zone_and_player_projection_roundtrip_separately() {
@@ -527,11 +613,9 @@ mod tests {
             decode_canonical_snapshot(&encode_canonical_snapshot(&canonical).unwrap()).unwrap(),
             canonical
         );
-        assert_eq!(
-            decode_snapshot(&encode_snapshot(&visible).unwrap()).unwrap(),
-            visible
-        );
-        assert!(decode_canonical_snapshot(&encode_snapshot(&visible).unwrap()).is_err());
+        let encoded = encode_snapshot(&visible, SheetRevisions::default()).unwrap();
+        assert_eq!(decode_snapshot(&encoded).unwrap(), visible);
+        assert!(decode_canonical_snapshot(&encoded).is_err());
         assert!(decode_snapshot(&encode_canonical_snapshot(&canonical).unwrap()).is_err());
     }
     #[test]

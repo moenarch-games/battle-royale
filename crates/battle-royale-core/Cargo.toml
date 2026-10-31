@@ -15,3 +15,4 @@ workspace = true
 # Shared-codec consumer proofs use the same exact MMORPG revision as runtime.
 [dev-dependencies]
 mmorpg-protocol.workspace = true
+strum.workspace = true

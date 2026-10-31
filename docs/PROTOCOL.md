@@ -1,9 +1,11 @@
 # Composed match protocol
 
-Battle Royale protocol **2**, canonical schema **2**, ruleset revision **2** replace the
+Battle Royale protocol **2**, canonical schema **2**, ruleset revision **3** replace the
 standalone integer player simulator. Version 1 commands and snapshots fail closed.
-The pinned MMORPG codecs remain their existing command v13 / snapshot v30 / schema 29;
-this task does not fork or extend those codecs. `game-server` still supplies player
+Ruleset 3 (#33) gives the storm a 60 s delay and a 120 s close, so it reaches no spawn
+slot in the first two minutes of combat. The embedded MMORPG codecs are the pinned
+revision's, identified by its `mmorpg-protocol::PROTOCOL_ID`; this repository does not
+fork or extend them. `game-server` still supplies player
 identity, connection epochs, command sequences and its session framing.
 
 ## Commands
@@ -14,7 +16,13 @@ A little-endian u16 version and u8 kind precede one payload:
 | --- | --- |
 | 1 | Two signed bytes, world X/Z movement components in -1..=1; adapted to shared movement |
 | 2 | Class u8, sex u8, six little-endian u16 equipped item IDs (zero is an empty slot) |
-| 3 | Complete existing `mmorpg-protocol::encode_command` bytes |
+| 3 | A complete `mmorpg-protocol` command: plain, observed, or wrapped by `encode_acknowledged_command` with the sheet revisions the client holds |
+
+The host records the sheet revisions of each applied kind 3 command and packs that
+player's projection with `pack_snapshot_acknowledged`, as MMORPG's zone host does
+(mmorpg #544): a bag, quest, loot or ability sheet travels only while the client lacks its
+current revision. The record is projection-only; recovery rebuilds it by replay or
+starts empty, which resends every sheet. An observed command's tick is not used.
 
 Kind 2 validates against the shared class/equipment catalogs and is accepted only in
 the waiting lobby, before the active life. Hosts may instead supply the chosen build

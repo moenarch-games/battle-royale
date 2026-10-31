@@ -358,6 +358,7 @@ mod tests {
     use mmorpg_core::{
         ClassChoice, EphemeralCharacterBuild, PlayerClass, Sex, ZoneId, ZoneSimulation,
     };
+    use strum::VariantArray;
 
     #[test]
     fn the_mode_arena_admits_full_capacity_through_shared_character_rules() {
@@ -366,7 +367,7 @@ mod tests {
             ZoneSimulation::with_content(ZoneId::new(100), Arc::clone(&content)).unwrap();
         for player in 1..=crate::MAX_PLAYERS_PER_MATCH as u32 {
             let build = EphemeralCharacterBuild::standard(ClassChoice {
-                class: PlayerClass::ALL[(player as usize - 1) % PlayerClass::ALL.len()],
+                class: PlayerClass::VARIANTS[(player as usize - 1) % PlayerClass::VARIANTS.len()],
                 sex: Sex::Male,
             })
             .unwrap();

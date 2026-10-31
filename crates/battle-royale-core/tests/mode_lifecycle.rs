@@ -64,6 +64,25 @@ fn lobby_selection_movement_and_phase_lock_share_real_character_state() {
     assert_eq!(view.players.len(), 2);
 }
 #[test]
+fn the_storm_reaches_no_spawn_slot_in_the_first_two_minutes_of_combat() {
+    let grid = arena::spawn_grid();
+    let columns = i32::from(grid.columns);
+    let grace = 120 * u64::from(TICK_HZ);
+    for match_id in 0..256 {
+        let storm = BattleRoyaleMatch::storm_after(BattleMatchId::new(match_id), grace);
+        for slot in 0..512_i32 {
+            let x = grid.origin[0] + slot % columns * grid.spacing;
+            let z = grid.origin[1] + slot / columns * grid.spacing;
+            let dx = i64::from(x - storm.center[0]);
+            let dz = i64::from(z - storm.center[1]);
+            assert!(
+                dx * dx + dz * dz < i64::from(storm.radius).pow(2),
+                "match {match_id} slot {slot} is in the storm"
+            );
+        }
+    }
+}
+#[test]
 fn retirement_storm_and_finished_state_preserve_existing_mode_rules() {
     let mut lobby = BattleRoyaleMatch::new(BattleMatchId::new(13));
     lobby.add_player(1).unwrap();
@@ -108,7 +127,10 @@ fn actual_storm_damage_and_elimination_continue_through_a_complete_checkpoint() 
     start(&mut simulation);
     let initial = simulation.snapshot().unwrap().zone.players[0].combat.health;
     let mut damaged = false;
-    for _ in 0..1600 {
+    for _ in 0..STORM_DELAY_TICKS {
+        simulation.advance_tick().unwrap();
+    }
+    for _ in 0..STORM_SHRINK_DURATION_TICKS {
         simulation.advance_tick().unwrap();
         let state = simulation.snapshot().unwrap();
         damaged |= state.zone.players.iter().any(|p| p.combat.health < initial);
