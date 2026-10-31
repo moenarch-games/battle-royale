@@ -16,8 +16,8 @@ publish = false
 
 [workspace.dependencies]
 game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "043867333bbfd880d4ef3484d57fd7199d3b6f2b" }
-mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "0fd6229f8fde83532421abb44ea996d5df937c21" }
-mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "0fd6229f8fde83532421abb44ea996d5df937c21" }
+mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "6d744b799b1ab43c514cbddcf6842ae9ac8194e5" }
+mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "6d744b799b1ab43c514cbddcf6842ae9ac8194e5" }
 input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "001cd01c7f25898a1080fb7e200482bbfb8060d5" }
 battle-royale-core = { path = "crates/battle-royale-core" }
 battle-royale-protocol = { path = "crates/battle-royale-protocol" }
