@@ -16,9 +16,9 @@ publish = false
 
 [workspace.dependencies]
 game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "57d338546bcbd7046aafddc23f37612a33b7ca5f" }
-mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "35472644ad9ac568b2941bc4480e538d009e46d6" }
-mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "35472644ad9ac568b2941bc4480e538d009e46d6" }
-input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "3b0d6698de3c8e48d612e7b73bc6956dd1da1d05" }
+mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "b33427ea76cc7f3868dc759b72bd02e971dfbd50" }
+mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "b33427ea76cc7f3868dc759b72bd02e971dfbd50" }
+input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "c5fcbbfaa7174f3ea97a774a431008a99b5faa5d" }
 battle-royale-core = { path = "crates/battle-royale-core" }
 battle-royale-protocol = { path = "crates/battle-royale-protocol" }
 # Test-only: iterates mmorpg-core's `PlayerClass::VARIANTS`.
