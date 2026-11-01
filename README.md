@@ -5,9 +5,23 @@ Players use the MMORPG's maximum-level classes, legal equipment, real attacks,
 guards, spells, projectiles, health and Rapier movement. The mode owns lobby setup,
 phases, storm, elimination and winner; `game-server` owns hosting and sessions.
 
-The headless scenario and real two-client WebTransport path work. The rendered
-browser/native mode entrance remains [MMORPG #341](https://github.com/moritzbrantner/mmorpg/issues/341).
-There is no separate Battle Royale renderer, inventory or combat engine.
+The headless scenario and real two-client WebTransport path work. The shared
+MMORPG browser now provides local Battle Royale practice and optional hosted play;
+the native mode entrance is not part of this Pages launcher. There is no separate
+Battle Royale renderer, inventory or combat engine.
+
+## Play in the browser
+
+Open [Battle Royale Pages](https://moenarch-games.github.io/battle-royale/) and select
+**Play local practice**. This launches the production [MMORPG Pages](https://moenarch-games.github.io/mmorpg/?activity=battle-royale)
+client with `?activity=battle-royale`: pick a class and gear, enter the shared fortress,
+fight stationary training targets and reset. Practice is local to the browser; no
+account, public server, matchmaking or persistent character is needed.
+
+**Hosted match** remains selectable inside the MMORPG arena setup, but requires a
+match server supplied by the players. The Battle Royale repository publishes only
+this static launcher; the shared MMORPG browser owns rendering, assets, input and
+local combat simulation. See [MMORPG's Battle Royale guide](https://github.com/moenarch-games/mmorpg/blob/main/docs/BATTLE_ROYALE.md).
 
 ## Character setup and play
 
@@ -39,7 +53,7 @@ PvP modes remain deferred product choices.
 | Mode envelope around existing MMORPG command/canonical/player codecs | `battle-royale-protocol` |
 | Sessions, sequences, ticks, disconnect/reconnect, replay, recovery and multi-match WebTransport hosting | pinned `game-server` |
 | Device/binding semantics and reusable mobile overlay editor | pinned `input-bindings` |
-| Models, animation, effects, assets and renderer | existing MMORPG presentation owners; client entry pending #341 |
+| Models, animation, effects, assets and renderer | existing MMORPG browser presentation; no Battle Royale client fork |
 | Accounts, matchmaking, parties, rankings and durable rewards | external services outside the match hot loop |
 
 Canonical recovery embeds the whole shared zone plus mode state. Player snapshots
@@ -91,8 +105,8 @@ introduced. See [benchmark scope](benchmarks/README.md).
 `battle-royale-client` supplies semantic move/look/menu actions through shared
 `input-bindings`. Its integer thumbstick quantizer uses a 42% radial dead zone,
 diagonal hysteresis and duplicate suppression. Look/menu remain local; actual combat
-uses the shared character commands. The MMORPG mode entrance will reuse the existing
-mobile overlay and rendering rather than creating a competing UI stack.
+uses the shared character commands. The MMORPG browser mode already reuses its mobile overlay and rendering; this
+repository provides no competing UI stack.
 
 ## Exact foundations
 

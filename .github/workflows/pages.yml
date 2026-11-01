@@ -1,0 +1,44 @@
+name: Pages
+
+on:
+  pull_request:
+    paths:
+      - "pages/**"
+      - "tests/test_pages_launcher.py"
+      - ".github/workflows/pages.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "pages/**"
+      - "tests/test_pages_launcher.py"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  launcher:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify the Pages practice entry
+        run: python3 -m unittest discover -s tests -p 'test_pages_launcher.py'
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: launcher
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      pages: write
+      id-token: write
+    uses: moritzbrantner/reusable-workflows/.github/workflows/deploy-pages.yml@main
+    with:
+      artifact_path: pages
+      node_version: ""
+      bun_version: ""
+      install_command: ""
+      cache_bun: false
