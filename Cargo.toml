@@ -18,7 +18,7 @@ publish = false
 game-server = { git = "https://github.com/moritzbrantner/game-server.git", rev = "57d338546bcbd7046aafddc23f37612a33b7ca5f" }
 mmorpg-core = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "7ad0c2b5e78250103344b805faa2299f83eedc40" }
 mmorpg-protocol = { git = "https://github.com/moritzbrantner/mmorpg.git", rev = "7ad0c2b5e78250103344b805faa2299f83eedc40" }
-input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "c5fcbbfaa7174f3ea97a774a431008a99b5faa5d" }
+input-bindings-core = { git = "https://github.com/moritzbrantner/input-bindings.git", rev = "52a1375f1a40a9aab61ef4867f7847373e6c68d7" }
 battle-royale-core = { path = "crates/battle-royale-core" }
 battle-royale-protocol = { path = "crates/battle-royale-protocol" }
 # Test-only: iterates mmorpg-core's `PlayerClass::VARIANTS`.
