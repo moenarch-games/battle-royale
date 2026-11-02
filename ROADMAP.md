@@ -30,11 +30,17 @@ The checked items below distinguish the composed authoritative match and real tw
 - [x] Replace duplicate player health, movement and physics with one authoritative `mmorpg-core::ZoneSimulation` per match; retain only match-specific storm, phase, elimination and winner logic ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
 - [x] Preserve deterministic command ordering and complete match + zone recovery through the existing `game-server` host ([#13](https://github.com/moritzbrantner/battle-royale/issues/13)).
 - [x] Author the symmetric multilevel fortress arena as graybox shared zone content with physical traversal: courtyard, keep interior, ramps, towers, rooftops, bridges and traversal-only lifts ([#31](https://github.com/moenarch-games/battle-royale/issues/31), [ARENA.md](docs/ARENA.md)).
-- [ ] Render and traverse the fortress in the MMORPG browser, hosted and in local practice ([mmorpg #552](https://github.com/moenarch-games/mmorpg/issues/552)); replace graybox with authored art.
-- [ ] Play as full-size MMORPG characters with a friend in one real hosted match using the MMORPG's presentation; change class/gear only between lives ([mmorpg #341](https://github.com/moritzbrantner/mmorpg/issues/341)).
+- [x] Render and traverse the fortress in the MMORPG browser, hosted and in local practice ([mmorpg #552](https://github.com/moenarch-games/mmorpg/issues/552)); further presentation polish remains owned by the shared MMORPG pipeline.
+- [x] Play as full-size MMORPG characters with a friend in one real hosted match using the MMORPG's presentation; change class/gear only between lives ([mmorpg #341](https://github.com/moenarch-games/mmorpg/issues/341)).
 - [ ] Revalidate scale/performance on real MMORPG character combat and animation before claiming large-player readiness.
 
 Extra PvP modes and precise rules for loot, teams, respawn, prizes, balance and the drop phase are **not yet selected**. Existing match defaults are implementation scaffolding; do not build gun/fire/reload mechanics or a second inventory/combat system.
+
+## Public browser entry
+
+- [x] The MMORPG production Pages browser supports local Battle Royale practice by default at `?activity=battle-royale` (MMORPG #550 / PR #570), including class/gear choice, training targets and reset.
+- [x] Publish a minimal Battle Royale GitHub Pages entry linking into that browser (#32); hosted matches remain optional and require a supplied host.
+- [ ] Public hosted matchmaking or a production match fleet is not provided by GitHub Pages.
 
 ## Networking and scale
 
@@ -53,7 +59,7 @@ Extra PvP modes and precise rules for loot, teams, respawn, prizes, balance and 
 
 ## Client foundations
 
-- [ ] Reuse the MMORPG's existing Three.js/browser and wgpu/native character presentation, animation and assets, without introducing a Battle Royale-specific renderer.
+- [x] Reuse the MMORPG's existing Three.js/browser character presentation, animation and assets, without introducing a Battle Royale-specific renderer; native entry remains separate.
 - [x] Reuse the shared `input-bindings` action model for Battle Royale client actions.
 - [x] Add deterministic mobile thumbstick adaptation onto the existing authoritative movement command.
 - [x] Keep look/menu mobile interactions client-local until game rules require an authoritative command.
