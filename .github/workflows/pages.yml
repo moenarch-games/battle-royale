@@ -5,6 +5,7 @@ on:
     paths:
       - "pages/**"
       - "tests/test_pages_launcher.py"
+      - "tests/smoke_public_pages.py"
       - ".github/workflows/pages.yml"
   push:
     branches:
@@ -12,6 +13,7 @@ on:
     paths:
       - "pages/**"
       - "tests/test_pages_launcher.py"
+      - "tests/smoke_public_pages.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -42,3 +44,25 @@ jobs:
       bun_version: ""
       install_command: ""
       cache_bun: false
+
+  smoke-public-pages:
+    if: github.event_name != 'pull_request'
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install browser acceptance tooling
+        run: |
+          python3 -m pip install playwright==1.57.0
+          python3 -m playwright install --with-deps chromium
+      - name: Verify desktop and mobile practice on deployed Pages
+        run: python3 tests/smoke_public_pages.py
+      - name: Keep browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-browser-smoke
+          path: artifacts/pages-smoke/
+          if-no-files-found: warn
+          retention-days: 14
