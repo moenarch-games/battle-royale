@@ -39,3 +39,7 @@ Read [the Battle Royale Decision Atlas](docs/decisions/atlas.md). This repositor
 ## Validation
 
 Run formatting, Clippy, tests and build for the complete workspace with the committed lockfile. Do not weaken failures to make a slice green.
+
+## Pull-request integration
+
+Follow the current shared `coding-agent-conventions` rule `GIT-006` for approved PR integration, including explicit merge-queue submission when ready. Preserve this repository's review, validation, dependency, and owner-approval requirements.
