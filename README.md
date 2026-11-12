@@ -73,7 +73,11 @@ cargo run --locked -p battle-royale-game-server --bin battle-royale-host
 ```
 
 The host defaults to UDP 4433 and read-only operational status on 8080. Route
-`/game/matches/br-0000000000000001` selects match 1. Existing `game-server` welcome,
+`/game/matches/br-0000000000000001` selects match 1. A match id with `:rewind`
+(`BATTLE_ROYALE_MATCH_IDS=1,2:rewind`) runs the arena netcode trial's capped server
+rewind of attack-against-body hits in that match only (`HitRewind::ARENA_TRIAL`, mmorpg
+#680); clashes always resolve in the present. The option changes the match's content
+revision, so the browser tells which option it joined. Existing `game-server` welcome,
 command, reconnect and snapshot framing surrounds the mode bytes documented in
 [the client contract](docs/PROTOCOL.md).
 

@@ -157,3 +157,18 @@ fn actual_storm_damage_and_elimination_continue_through_a_complete_checkpoint() 
     }
     panic!("shrinking storm must apply real shared-zone damage");
 }
+#[test]
+fn hit_rewind_is_a_per_match_option_that_recovery_keeps() {
+    let plain = BattleRoyaleMatch::new(BattleMatchId::new(7));
+    let mut rewound = BattleRoyaleMatch::with_hit_rewind(BattleMatchId::new(8), true);
+    assert!(!plain.hit_rewind());
+    assert!(rewound.hit_rewind());
+    assert_ne!(
+        arena::content_for(true).unwrap().revision(),
+        arena::content().unwrap().revision()
+    );
+    start(&mut rewound);
+    let restored = BattleRoyaleMatch::from_snapshot(rewound.snapshot().unwrap()).unwrap();
+    assert!(restored.hit_rewind());
+    assert_eq!(restored.snapshot().unwrap(), rewound.snapshot().unwrap());
+}

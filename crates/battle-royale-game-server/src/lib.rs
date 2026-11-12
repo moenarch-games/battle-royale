@@ -56,10 +56,16 @@ pub struct BattleRoyaleGameServerAdapter {
 impl BattleRoyaleGameServerAdapter {
     #[must_use]
     pub fn new(match_id: BattleMatchId) -> Self {
-        Self {
-            simulation: BattleRoyaleMatch::new(match_id),
-            sheet_acks: BTreeMap::new(),
-        }
+        Self::hosting(HostedMatch::from(match_id))
+    }
+
+    /// Hosts a configured match: its id and its per-match netcode option (mmorpg #680).
+    #[must_use]
+    pub fn hosting(hosted: HostedMatch) -> Self {
+        Self::from_simulation(BattleRoyaleMatch::with_hit_rewind(
+            hosted.match_id,
+            hosted.hit_rewind,
+        ))
     }
 
     /// Hosts an existing match, such as one restored from a canonical snapshot. Sheet
@@ -91,26 +97,56 @@ pub fn route_match_id(match_id: BattleMatchId) -> Result<MatchId, MatchIdError> 
     MatchId::new(format!("br-{:016x}", match_id.get()))
 }
 
-pub fn build_match_entries(
-    match_ids: impl IntoIterator<Item = BattleMatchId>,
-) -> Result<Vec<(MatchId, BattleRoyaleGameServerAdapter)>, MatchHostBuildError> {
-    let match_ids = match_ids.into_iter().collect::<Vec<_>>();
+/// One match a host serves and its per-match netcode option (mmorpg #680): with
+/// `hit_rewind`, the arena trial's capped server rewind of attack-against-body hits, the same
+/// for everyone in the match. A bare match id runs without it.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct HostedMatch {
+    pub match_id: BattleMatchId,
+    pub hit_rewind: bool,
+}
+
+impl From<BattleMatchId> for HostedMatch {
+    fn from(match_id: BattleMatchId) -> Self {
+        Self {
+            match_id,
+            hit_rewind: false,
+        }
+    }
+}
+
+pub fn build_match_entries<I>(
+    matches: I,
+) -> Result<Vec<(MatchId, BattleRoyaleGameServerAdapter)>, MatchHostBuildError>
+where
+    I: IntoIterator,
+    I::Item: Into<HostedMatch>,
+{
+    let matches = matches.into_iter().map(Into::into).collect::<Vec<_>>();
+    let match_ids = matches
+        .iter()
+        .map(|hosted| hosted.match_id)
+        .collect::<Vec<_>>();
     validate_match_ids(&match_ids)?;
 
-    match_ids
+    matches
         .into_iter()
-        .map(|match_id| {
-            let route = route_match_id(match_id).map_err(MatchHostBuildError::MatchId)?;
-            Ok((route, BattleRoyaleGameServerAdapter::new(match_id)))
+        .map(|hosted| {
+            let route = route_match_id(hosted.match_id).map_err(MatchHostBuildError::MatchId)?;
+            Ok((route, BattleRoyaleGameServerAdapter::hosting(hosted)))
         })
         .collect()
 }
 
-pub fn build_match_host(
-    match_ids: impl IntoIterator<Item = BattleMatchId>,
+pub fn build_match_host<I>(
+    matches: I,
     reconnect_grace_ticks: u64,
-) -> Result<MatchHost<BattleRoyaleGameServerAdapter>, MatchHostBuildError> {
-    let matches = build_match_entries(match_ids)?;
+) -> Result<MatchHost<BattleRoyaleGameServerAdapter>, MatchHostBuildError>
+where
+    I: IntoIterator,
+    I::Item: Into<HostedMatch>,
+{
+    let matches = build_match_entries(matches)?;
     let mut host = MatchHost::new(matches.len()).map_err(MatchHostBuildError::Host)?;
     for (route, simulation) in matches {
         let runtime = MatchRuntime::new(simulation, reconnect_grace_ticks);
@@ -335,11 +371,11 @@ mod tests {
     #[test]
     fn host_rejects_empty_and_duplicate_sets_and_keeps_matches_isolated() {
         assert!(matches!(
-            build_match_entries([]),
+            build_match_entries([] as [BattleMatchId; 0]),
             Err(MatchHostBuildError::Empty)
         ));
         assert!(matches!(
-            build_match_host([], 120),
+            build_match_host([] as [BattleMatchId; 0], 120),
             Err(MatchHostBuildError::Empty)
         ));
         assert_eq!(

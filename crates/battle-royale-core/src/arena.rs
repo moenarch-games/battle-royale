@@ -24,8 +24,8 @@
 //!
 //! The whole layout is four copies of one side rotated by quarter turns about the centre.
 use mmorpg_core::{
-    CharacterPersistence, Platform, PlatformId, PlayerCombatPolicy, Ramp, RampRise, SpawnGrid,
-    StaticCollider, TimedCombat, ZoneContent, ZoneDefinition, ZoneError,
+    CharacterPersistence, HitRewind, Platform, PlatformId, PlayerCombatPolicy, Ramp, RampRise,
+    SpawnGrid, StaticCollider, TimedCombat, ZoneContent, ZoneDefinition, ZoneError,
 };
 use std::sync::{Arc, OnceLock};
 
@@ -58,10 +58,28 @@ pub enum ArenaPart {
     Lift,
 }
 
-/// The validated arena content shared by every match.
+/// The validated arena content of a match without hit rewind: today's baseline.
 pub fn content() -> Result<Arc<ZoneContent>, ZoneError> {
-    static CONTENT: OnceLock<Result<Arc<ZoneContent>, ZoneError>> = OnceLock::new();
-    CONTENT.get_or_init(build_content).clone()
+    content_for(false)
+}
+
+/// The validated arena content of one match: with `hit_rewind`, the arena netcode trial's
+/// capped server rewind of attack-against-body hits (`HitRewind::ARENA_TRIAL`, mmorpg #680).
+/// The option is per match, the same for everyone in it. It changes the content revision, so
+/// clients and recovery tell from the revision which option a match runs.
+pub fn content_for(hit_rewind: bool) -> Result<Arc<ZoneContent>, ZoneError> {
+    static PLAIN: OnceLock<Result<Arc<ZoneContent>, ZoneError>> = OnceLock::new();
+    static REWOUND: OnceLock<Result<Arc<ZoneContent>, ZoneError>> = OnceLock::new();
+    if hit_rewind {
+        REWOUND
+            .get_or_init(|| {
+                let content = Arc::unwrap_or_clone(content()?);
+                Ok(Arc::new(content.with_hit_rewind(HitRewind::ARENA_TRIAL)?))
+            })
+            .clone()
+    } else {
+        PLAIN.get_or_init(build_content).clone()
+    }
 }
 
 /// Every body of [`content`] (colliders, ramps and lift platforms) with its part, by body id.

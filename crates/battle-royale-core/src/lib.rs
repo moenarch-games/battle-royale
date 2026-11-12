@@ -2,13 +2,14 @@
 
 pub mod arena;
 
-use mmorpg_core::{CanonicalZoneSnapshot, ZoneId, ZoneSimulation, ZoneSnapshot};
+use mmorpg_core::{CanonicalZoneSnapshot, ZoneContent, ZoneId, ZoneSimulation, ZoneSnapshot};
 pub use mmorpg_core::{
     ClassChoice, EntityRef, EphemeralCharacterBuild, PlayerClass, PlayerId, Sex, ZoneCommand,
 };
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;
+use std::sync::Arc;
 
 pub const TICK_HZ: u16 = mmorpg_core::TICK_HZ;
 pub const MAX_PLAYERS_PER_MATCH: usize = 100;
@@ -172,6 +173,8 @@ pub struct BattleRoyaleMatch {
     phase_started_tick: u64,
     combat_started_tick: Option<u64>,
     lobby_ready_tick: Option<u64>,
+    /// The match's arena content, with or without hit rewind ([`arena::content_for`]).
+    content: Arc<ZoneContent>,
     zone: ZoneSimulation,
     players: BTreeMap<PlayerId, PlayerState>,
     winner: Option<PlayerId>,
@@ -179,12 +182,16 @@ pub struct BattleRoyaleMatch {
 impl BattleRoyaleMatch {
     #[must_use]
     pub fn new(match_id: BattleMatchId) -> Self {
+        Self::with_hit_rewind(match_id, false)
+    }
+    /// A match that runs the arena netcode trial's capped hit rewind when `hit_rewind`
+    /// (mmorpg #680): a per-match option, the same for every player in it.
+    #[must_use]
+    pub fn with_hit_rewind(match_id: BattleMatchId, hit_rewind: bool) -> Self {
         // Fixed authored content is validated once; failure is a program initialization defect.
-        let zone = ZoneSimulation::with_content(
-            ARENA_ZONE,
-            arena::content().expect("valid authored arena"),
-        )
-        .expect("valid authored arena simulation");
+        let content = arena::content_for(hit_rewind).expect("valid authored arena");
+        let zone = ZoneSimulation::with_content(ARENA_ZONE, Arc::clone(&content))
+            .expect("valid authored arena simulation");
         Self {
             match_id,
             tick: 0,
@@ -192,6 +199,7 @@ impl BattleRoyaleMatch {
             phase_started_tick: 0,
             combat_started_tick: None,
             lobby_ready_tick: None,
+            content,
             zone,
             players: BTreeMap::new(),
             winner: None,
@@ -200,6 +208,11 @@ impl BattleRoyaleMatch {
     #[must_use]
     pub const fn match_id(&self) -> BattleMatchId {
         self.match_id
+    }
+    /// Whether the match runs the arena netcode trial's capped hit rewind (mmorpg #680).
+    #[must_use]
+    pub fn hit_rewind(&self) -> bool {
+        self.content.hit_rewind().is_some()
     }
     #[must_use]
     pub const fn current_tick(&self) -> u64 {
@@ -301,8 +314,10 @@ impl BattleRoyaleMatch {
                     return Err(MatchError::new("loadouts are locked for this life"));
                 }
                 // Prepare replacement before committing: a failed setup never retires the guest.
-                let mut prepared =
-                    ZoneSimulation::from_snapshot(self.zone.snapshot()?, arena::content()?)?;
+                let mut prepared = ZoneSimulation::from_snapshot(
+                    self.zone.snapshot()?,
+                    Arc::clone(&self.content),
+                )?;
                 prepared.remove_player(player_id);
                 prepared.admit_ephemeral(player_id, &build)?;
                 self.zone = prepared;
@@ -526,7 +541,10 @@ impl BattleRoyaleMatch {
             ));
         }
         let expected_storm = snapshot.storm;
-        let zone = ZoneSimulation::from_snapshot(snapshot.zone, arena::content()?)?;
+        // The content revision tells which per-match netcode option the match runs.
+        let hit_rewind = arena::content_for(true)?.revision() == snapshot.zone.content_revision;
+        let content = arena::content_for(hit_rewind)?;
+        let zone = ZoneSimulation::from_snapshot(snapshot.zone, Arc::clone(&content))?;
         let result = Self {
             match_id: snapshot.match_id,
             tick: snapshot.tick,
@@ -534,6 +552,7 @@ impl BattleRoyaleMatch {
             phase_started_tick: snapshot.phase_started_tick,
             combat_started_tick: snapshot.combat_started_tick,
             lobby_ready_tick: snapshot.lobby_ready_tick,
+            content,
             zone,
             players,
             winner: snapshot.winner,
