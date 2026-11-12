@@ -1,5 +1,5 @@
 use battle_royale_core::BattleMatchId;
-use battle_royale_game_server::{build_match_entries, build_match_host};
+use battle_royale_game_server::{HostedMatch, build_match_entries, build_match_host};
 use game_server::{
     BrowserRoutePrefix, DEFAULT_HOST_STATUS_PORT, DEFAULT_RECONNECT_GRACE_TICKS,
     MatchHostRecoveryConfig, MatchHostStatusConfig, MatchHostWebTransportConfig,
@@ -95,7 +95,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn parse_match_ids(value: &str) -> Result<Vec<BattleMatchId>, ConfigError> {
+/// `7,11:rewind,42`: match ids, each optionally `:rewind` for the arena netcode trial's
+/// capped hit rewind in that match (mmorpg #680).
+fn parse_match_ids(value: &str) -> Result<Vec<HostedMatch>, ConfigError> {
     if value.is_empty() {
         return Err(ConfigError(
             "BATTLE_ROYALE_MATCH_IDS must not be empty".to_owned(),
@@ -105,10 +107,23 @@ fn parse_match_ids(value: &str) -> Result<Vec<BattleMatchId>, ConfigError> {
     value
         .split(',')
         .map(|raw| {
-            raw.parse::<u64>().map(BattleMatchId::new).map_err(|error| {
+            let (id, hit_rewind) = match raw.split_once(':') {
+                Some((id, "rewind")) => (id, true),
+                Some((_, option)) => {
+                    return Err(ConfigError(format!(
+                        "BATTLE_ROYALE_MATCH_IDS contains unknown match option {option:?}"
+                    )));
+                }
+                None => (raw, false),
+            };
+            let match_id = id.parse::<u64>().map(BattleMatchId::new).map_err(|error| {
                 ConfigError(format!(
                     "BATTLE_ROYALE_MATCH_IDS contains invalid match id {raw:?}: {error}"
                 ))
+            })?;
+            Ok(HostedMatch {
+                match_id,
+                hit_rewind,
             })
         })
         .collect()
@@ -185,11 +200,26 @@ mod tests {
         assert_eq!(
             parse_match_ids("7,11,42").unwrap(),
             vec![
-                BattleMatchId::new(7),
-                BattleMatchId::new(11),
-                BattleMatchId::new(42),
+                HostedMatch::from(BattleMatchId::new(7)),
+                HostedMatch::from(BattleMatchId::new(11)),
+                HostedMatch::from(BattleMatchId::new(42)),
             ]
         );
+    }
+
+    #[test]
+    fn parses_per_match_hit_rewind() {
+        assert_eq!(
+            parse_match_ids("7,11:rewind").unwrap(),
+            vec![
+                HostedMatch::from(BattleMatchId::new(7)),
+                HostedMatch {
+                    match_id: BattleMatchId::new(11),
+                    hit_rewind: true,
+                },
+            ]
+        );
+        assert!(parse_match_ids("7:lag").is_err());
     }
 
     #[test]
