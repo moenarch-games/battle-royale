@@ -560,6 +560,7 @@ mod tests {
             quests: 0,
             loot: 1,
             abilities: 7,
+            ..SheetRevisions::default()
         };
         let command = ZoneCommand::UseAbility {
             ability: 9,

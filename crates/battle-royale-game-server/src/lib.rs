@@ -270,6 +270,7 @@ mod tests {
             quests: 1,
             loot: 1,
             abilities: 1,
+            ..SheetRevisions::default()
         };
         let jump = battle_royale_core::ZoneCommand::Jump;
         adapter
