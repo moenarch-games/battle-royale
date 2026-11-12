@@ -25,7 +25,7 @@
 //! The whole layout is four copies of one side rotated by quarter turns about the centre.
 use mmorpg_core::{
     CharacterPersistence, Platform, PlatformId, PlayerCombatPolicy, Ramp, RampRise, SpawnGrid,
-    StaticCollider, ZoneContent, ZoneDefinition, ZoneError,
+    StaticCollider, TimedCombat, ZoneContent, ZoneDefinition, ZoneError,
 };
 use std::sync::{Arc, OnceLock};
 
@@ -95,7 +95,9 @@ fn build_content() -> Result<Arc<ZoneContent>, ZoneError> {
         .with_platforms(platforms)?
         .with_ramps(ramps)?
         .with_character_persistence(CharacterPersistence::Ephemeral)
-        .with_player_combat(PlayerCombatPolicy::FreeForAll);
+        .with_player_combat(PlayerCombatPolicy::FreeForAll)
+        // Swings are timed and can clash, arena first (mmorpg #679).
+        .with_timed_combat(TimedCombat::ARENA)?;
     Ok(Arc::new(content))
 }
 
