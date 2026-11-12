@@ -34,7 +34,8 @@ outcomes never export or overwrite durable MMORPG characters.
 
 Use `MatchCommand::Character(ZoneCommand)` for the actual MMORPG movement, target,
 attack, guard, directed-strike and ability intents. Combat requires the Combat
-phase. Inventory/class mutations and spirit release are refused, so the shared
+phase. The arena runs the shared zone's timed swings and attack clashes
+(`TimedCombat::ARENA`, mmorpg #679). Inventory/class mutations and spirit release are refused, so the shared
 MMORPG's PvE resurrection command cannot revive a match elimination. The existing
 mobile semantic movement adapter maps its world X/Z intent into shared movement.
 
