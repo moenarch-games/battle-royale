@@ -115,7 +115,7 @@ repository provides no competing UI stack.
 
 ## Exact foundations
 
-- `mmorpg-core` / `mmorpg-protocol`: `fc65842d76ea65d12f31f2349ba0765e180bd0bb`
+- `mmorpg-core` / `mmorpg-protocol`: `72c313b405a25e4530f11cfe6cec7cdae1c4cd04` (per-attack interception and matching arena content identity, MMORPG #791)
 - `game-server`: `043867333bbfd880d4ef3484d57fd7199d3b6f2b`
 - `input-bindings`: `001cd01c7f25898a1080fb7e200482bbfb8060d5`
 - reusable validation workflow: `728fffa13c451766d08f06e6c7d7950a4de57b3d`
