@@ -550,7 +550,7 @@ dependencies = [
 [[package]]
 name = "mmorpg-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ed38765e82cca7d1f64f36d77ce74adfd45c5848#ed38765e82cca7d1f64f36d77ce74adfd45c5848"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=72c313b405a25e4530f11cfe6cec7cdae1c4cd04#72c313b405a25e4530f11cfe6cec7cdae1c4cd04"
 dependencies = [
  "serde",
  "serde_json",
@@ -563,7 +563,7 @@ dependencies = [
 [[package]]
 name = "mmorpg-protocol"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ed38765e82cca7d1f64f36d77ce74adfd45c5848#ed38765e82cca7d1f64f36d77ce74adfd45c5848"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=72c313b405a25e4530f11cfe6cec7cdae1c4cd04#72c313b405a25e4530f11cfe6cec7cdae1c4cd04"
 dependencies = [
  "mmorpg-core",
 ]
@@ -992,7 +992,7 @@ dependencies = [
 [[package]]
 name = "sim-combat"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ed38765e82cca7d1f64f36d77ce74adfd45c5848#ed38765e82cca7d1f64f36d77ce74adfd45c5848"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=72c313b405a25e4530f11cfe6cec7cdae1c4cd04#72c313b405a25e4530f11cfe6cec7cdae1c4cd04"
 dependencies = [
  "sim-foundation",
  "strum",
@@ -1001,7 +1001,7 @@ dependencies = [
 [[package]]
 name = "sim-foundation"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ed38765e82cca7d1f64f36d77ce74adfd45c5848#ed38765e82cca7d1f64f36d77ce74adfd45c5848"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=72c313b405a25e4530f11cfe6cec7cdae1c4cd04#72c313b405a25e4530f11cfe6cec7cdae1c4cd04"
 dependencies = [
  "physics-engine",
  "serde",
@@ -1011,7 +1011,7 @@ dependencies = [
 [[package]]
 name = "sim-movement"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ed38765e82cca7d1f64f36d77ce74adfd45c5848#ed38765e82cca7d1f64f36d77ce74adfd45c5848"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=72c313b405a25e4530f11cfe6cec7cdae1c4cd04#72c313b405a25e4530f11cfe6cec7cdae1c4cd04"
 dependencies = [
  "sim-foundation",
  "strum",
