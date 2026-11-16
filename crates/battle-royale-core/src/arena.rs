@@ -326,7 +326,10 @@ fn layout() -> Layout {
             let pillar = pillar.turned_by(quarter);
             let body = layout.body(ArenaPart::Lift);
             let low = pillar.centre();
-            let id = u8::try_from(layout.platforms.len() + 1).expect("lift count fits u8");
+            // Whatever width mmorpg-core gives platform IDs (u32 since mmorpg#882).
+            let id = (layout.platforms.len() + 1)
+                .try_into()
+                .expect("lift count fits a platform ID");
             layout.platforms.push(Platform {
                 id: PlatformId::new(id),
                 body,
