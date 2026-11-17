@@ -139,6 +139,7 @@ async fn two_real_clients_select_builds_fight_and_receive_the_same_winner() {
         let firebolt = MatchCommand::Character(ZoneCommand::UseAbility {
             ability: 9,
             target: Some(EntityRef::Player(second.player_id)),
+            facing: None,
         });
         // Offensive abilities fire where the caster faces (free aim), so turn toward the victim
         // first; neither character moves afterwards.
