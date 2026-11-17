@@ -56,6 +56,7 @@ fn shared_hit_elimination_winner_duplicate_reconnect_and_restore_form_one_match(
     let firebolt = MatchCommand::Character(ZoneCommand::UseAbility {
         ability: 9,
         target: Some(battle_royale_core::EntityRef::Player(victim.player_id)),
+        facing: None,
     });
     runtime
         .submit_command(

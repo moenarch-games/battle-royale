@@ -3,9 +3,10 @@ use battle_royale_game_server::BattleRoyaleGameServerAdapter;
 use battle_royale_protocol::{decode_canonical_snapshot, decode_snapshot, encode_command};
 use game_server::GameSimulation;
 
-// Format 2 includes the complete shared MMORPG zone (24,040 bytes at fresh capacity),
-// replacing the old 8 KiB baseline for the retired integer-only player records.
-const CANONICAL_SNAPSHOT_BUDGET_BYTES: usize = 32 * 1024;
+// Format 2 includes the complete shared MMORPG zone, replacing the old 8 KiB baseline for
+// the retired integer-only player records. The zone at mmorpg ba10b9ae (u32 item IDs,
+// per-creature random streams, data-driven quests) makes it 36,074 bytes at fresh capacity.
+const CANONICAL_SNAPSHOT_BUDGET_BYTES: usize = 40 * 1024;
 const PLAYER_SNAPSHOT_BUDGET_BYTES: usize = 4 * 1024;
 const DETERMINISM_TICKS: usize = 512;
 

@@ -46,6 +46,7 @@ fn pinned_mmorpg_combat_cast_hit_and_recovery_are_usable_by_the_mode() {
         ZoneCommand::UseAbility {
             ability: 9,
             target: Some(EntityRef::Player(2)),
+            facing: None,
         },
     )
     .unwrap();

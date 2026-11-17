@@ -11,7 +11,7 @@ use mmorpg_core::{
 pub use mmorpg_protocol::SheetRevisions;
 use std::{error::Error, fmt};
 
-pub const PROTOCOL_VERSION: u16 = 2;
+pub const PROTOCOL_VERSION: u16 = 3;
 const CANONICAL_MAGIC: [u8; 4] = *b"BRCA";
 const PLAYER_MAGIC: [u8; 4] = *b"BRPL";
 const MAX_COMPOSED_ZONE_BYTES: usize = 1024 * 1024;
@@ -52,7 +52,7 @@ pub fn encode_command(command: MatchCommand) -> Vec<u8> {
         MatchCommand::SelectBuild(build) => {
             bytes.extend_from_slice(&[2, build.class().class.code(), build.class().sex.code()]);
             for slot in build.equipment().slots() {
-                write_u16(&mut bytes, slot.map_or(0, ItemId::get));
+                write_u32(&mut bytes, slot.map_or(0, ItemId::get));
             }
         }
         MatchCommand::Character(command) => {
@@ -108,7 +108,7 @@ pub fn decode_command(payload: &[u8]) -> Result<CommandEnvelope, ProtocolError> 
                 .ok_or_else(|| ProtocolError::new("unknown sex"))?;
             let mut slots = [None; EQUIPMENT_SLOTS];
             for slot in &mut slots {
-                let id = cursor.read_u16()?;
+                let id = cursor.read_u32()?;
                 *slot = (id != 0).then_some(ItemId::new(id));
             }
             MatchCommand::SelectBuild(
@@ -531,6 +531,7 @@ mod tests {
             MatchCommand::Character(ZoneCommand::UseAbility {
                 ability: 9,
                 target: Some(mmorpg_core::EntityRef::Player(2)),
+                facing: None,
             }),
         ] {
             let encoded = encode_command(command);
@@ -546,7 +547,7 @@ mod tests {
             assert!(decode_command(&trailing).is_err());
         }
         let mut invalid = encode_command(MatchCommand::SelectBuild(build));
-        invalid[5..7].copy_from_slice(&u16::MAX.to_le_bytes());
+        invalid[5..9].copy_from_slice(&u32::MAX.to_le_bytes());
         assert!(decode_command(&invalid).is_err());
         assert!(
             decode_command(&[1, 0, 1, 0, 0]).is_err(),
@@ -565,6 +566,7 @@ mod tests {
         let command = ZoneCommand::UseAbility {
             ability: 9,
             target: Some(mmorpg_core::EntityRef::Player(2)),
+            facing: None,
         };
         let encoded = encode_acknowledged_command(sheets, command);
         assert_eq!(
