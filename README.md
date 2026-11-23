@@ -49,11 +49,11 @@ PvP modes remain deferred product choices.
 
 | Concern | Authority |
 | --- | --- |
-| Character state, equipment, movement, health, combat, abilities and Rapier physics | pinned `mmorpg-core` |
+| Character state, equipment, movement, health, combat, abilities and Rapier physics | `mmorpg-core` |
 | Lobby build selection, arena content, phases, storm, terminal elimination and winner | `battle-royale-core` |
 | Mode envelope around existing MMORPG command/canonical/player codecs | `battle-royale-protocol` |
-| Sessions, sequences, ticks, disconnect/reconnect, replay, recovery and multi-match WebTransport hosting | pinned `game-server` |
-| Device/binding semantics and reusable mobile overlay editor | pinned `input-bindings` |
+| Sessions, sequences, ticks, disconnect/reconnect, replay, recovery and multi-match WebTransport hosting | `game-server` |
+| Device/binding semantics and reusable mobile overlay editor | `input-bindings` |
 | Models, animation, effects, assets and renderer | existing MMORPG browser presentation; no Battle Royale client fork |
 | Accounts, matchmaking, parties, rankings and durable rewards | external services outside the match hot loop |
 
@@ -113,16 +113,18 @@ diagonal hysteresis and duplicate suppression. Look/menu remain local; actual co
 uses the shared character commands. The MMORPG browser mode already reuses its mobile overlay and rendering; this
 repository provides no competing UI stack.
 
-## Exact foundations
+## Foundations
 
-- `mmorpg-core` / `mmorpg-protocol`: `72c313b405a25e4530f11cfe6cec7cdae1c4cd04` (per-attack interception and matching arena content identity, MMORPG #791)
-- `game-server`: `043867333bbfd880d4ef3484d57fd7199d3b6f2b`
-- `input-bindings`: `001cd01c7f25898a1080fb7e200482bbfb8060d5`
+`mmorpg-core` / `mmorpg-protocol`, `game-server` and `input-bindings-core` follow their
+`main` branches (owner decision, [MMORPG #1126](https://github.com/moenarch-games/mmorpg/issues/1126));
+MMORPG depends on this repository's `main` in turn. The committed `Cargo.lock` fixes the
+commit every build uses; updating it (`cargo update`) moves the foundations forward together.
+
 - reusable validation workflow: `728fffa13c451766d08f06e6c7d7950a4de57b3d`
 - Performance Evidence contract: `a1b21d34f04e5b3b2324f6c0300459e70380edd2`
 
-The former direct `physics-engine` dependency is removed. Pins are intentional;
-combat and temporary-build consumer contract tests use the same runtime MMORPG pin.
+The former direct `physics-engine` dependency is removed. Combat and temporary-build
+consumer contract tests use the same locked MMORPG revision as the runtime.
 
 ## Validation
 

@@ -556,13 +556,10 @@ mod tests {
     }
     #[test]
     fn character_commands_carry_the_sheet_revisions_the_client_holds() {
-        let sheets = SheetRevisions {
-            inventory: 3,
-            quests: 0,
-            loot: 1,
-            abilities: 7,
-            ..SheetRevisions::default()
-        };
+        // mmorpg-protocol keeps the revisions opaque: take the ones a client holds after
+        // decoding a real projection.
+        let sheets = held_sheet_revisions(34);
+        assert_ne!(sheets, SheetRevisions::default());
         let command = ZoneCommand::UseAbility {
             ability: 9,
             target: Some(mmorpg_core::EntityRef::Player(2)),
@@ -580,9 +577,9 @@ mod tests {
         trailing.push(0);
         assert!(decode_command(&trailing).is_err());
     }
-    #[test]
-    fn projections_leave_out_the_sheets_a_client_acknowledged() {
-        let mut simulation = BattleRoyaleMatch::new(BattleMatchId::new(33));
+    /// The sheet revisions player 1 holds after decoding its first projection of a match.
+    fn held_sheet_revisions(match_id: u64) -> SheetRevisions {
+        let mut simulation = BattleRoyaleMatch::new(BattleMatchId::new(match_id));
         simulation.add_player(1).unwrap();
         simulation.add_player(2).unwrap();
         let visible = simulation.snapshot_for_player(1).unwrap();
@@ -594,7 +591,15 @@ mod tests {
                     .payload,
             )
             .unwrap();
-        let held = decoder.revisions();
+        decoder.revisions()
+    }
+    #[test]
+    fn projections_leave_out_the_sheets_a_client_acknowledged() {
+        let mut simulation = BattleRoyaleMatch::new(BattleMatchId::new(33));
+        simulation.add_player(1).unwrap();
+        simulation.add_player(2).unwrap();
+        let visible = simulation.snapshot_for_player(1).unwrap();
+        let held = held_sheet_revisions(33);
         assert_ne!(held, SheetRevisions::default());
         let full = encode_snapshot(&visible, SheetRevisions::default()).unwrap();
         let quiet = encode_snapshot(&visible, held).unwrap();

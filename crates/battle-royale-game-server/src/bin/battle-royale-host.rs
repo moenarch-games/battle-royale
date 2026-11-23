@@ -54,6 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let transport_config = MatchHostWebTransportConfig {
         port,
+        bind_ip: None,
         certificate_pem,
         private_key_pem,
         route_prefix,
