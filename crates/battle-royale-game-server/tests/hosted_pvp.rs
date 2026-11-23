@@ -83,6 +83,7 @@ async fn two_real_clients_select_builds_fight_and_receive_the_same_winner() {
         );
         let config = MatchHostWebTransportConfig {
             port,
+            bind_ip: None,
             certificate_pem: certificate,
             private_key_pem: key,
             route_prefix: prefix,

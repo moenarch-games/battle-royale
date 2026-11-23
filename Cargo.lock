@@ -77,6 +77,7 @@ dependencies = [
  "battle-royale-core",
  "battle-royale-protocol",
  "game-server",
+ "mmorpg-protocol",
  "tokio",
  "wtransport",
 ]
@@ -123,7 +124,7 @@ checksum = "87a0cf66fd1eb2fb7b822cb78370d82303750809bc6ba855f3f58e517d3238db"
 [[package]]
 name = "bvh-kernels"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/rust-kernels?rev=c219e947ad361e79c3c38e843854c73f8fbe9071#c219e947ad361e79c3c38e843854c73f8fbe9071"
+source = "git+https://github.com/moritzbrantner/rust-kernels?rev=7c4cc7c9e1c432969a28304db39f8b11e08f8129#7c4cc7c9e1c432969a28304db39f8b11e08f8129"
 dependencies = [
  "spatial-kernels",
 ]
@@ -307,7 +308,7 @@ dependencies = [
 [[package]]
 name = "game-server"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/game-server.git?rev=57d338546bcbd7046aafddc23f37612a33b7ca5f#57d338546bcbd7046aafddc23f37612a33b7ca5f"
+source = "git+https://github.com/moritzbrantner/game-server.git?branch=main#064e755ec6c224ce9ca2387c8e998379eb37272f"
 dependencies = [
  "ring",
  "tokio",
@@ -318,7 +319,7 @@ dependencies = [
 [[package]]
 name = "geometry-kernels"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/rust-kernels?rev=c219e947ad361e79c3c38e843854c73f8fbe9071#c219e947ad361e79c3c38e843854c73f8fbe9071"
+source = "git+https://github.com/moritzbrantner/rust-kernels?rev=7c4cc7c9e1c432969a28304db39f8b11e08f8129#7c4cc7c9e1c432969a28304db39f8b11e08f8129"
 dependencies = [
  "spatial-kernels",
 ]
@@ -478,7 +479,7 @@ dependencies = [
 [[package]]
 name = "input-bindings-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/input-bindings.git?rev=52a1375f1a40a9aab61ef4867f7847373e6c68d7#52a1375f1a40a9aab61ef4867f7847373e6c68d7"
+source = "git+https://github.com/moritzbrantner/input-bindings.git?branch=main#fdf71a85f06bd59cb7269fb20a3584db42bc22a5"
 dependencies = [
  "serde",
 ]
@@ -511,6 +512,12 @@ name = "libc"
 version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
+
+[[package]]
+name = "libm"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
 name = "litemap"
@@ -550,8 +557,9 @@ dependencies = [
 [[package]]
 name = "mmorpg-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ba10b9ae77a8cee966721695c9290e7d382a073f#ba10b9ae77a8cee966721695c9290e7d382a073f"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?branch=main#3fa3a7d39ccb938bacf8fa47b777313711019543"
 dependencies = [
+ "libm",
  "serde",
  "serde_json",
  "sim-combat",
@@ -563,7 +571,7 @@ dependencies = [
 [[package]]
 name = "mmorpg-protocol"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ba10b9ae77a8cee966721695c9290e7d382a073f#ba10b9ae77a8cee966721695c9290e7d382a073f"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?branch=main#3fa3a7d39ccb938bacf8fa47b777313711019543"
 dependencies = [
  "mmorpg-core",
 ]
@@ -658,10 +666,11 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "physics-engine"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/physics-engine?rev=ceef58fab0bc1dc7e084e733cf3223fc6ad27fc5#ceef58fab0bc1dc7e084e733cf3223fc6ad27fc5"
+source = "git+https://github.com/moritzbrantner/physics-engine?rev=bf5529cfeb419cc04e60f1730cd6d88cefb95324#bf5529cfeb419cc04e60f1730cd6d88cefb95324"
 dependencies = [
  "bvh-kernels",
  "geometry-kernels",
+ "libm",
  "spatial-kernels",
 ]
 
@@ -992,7 +1001,7 @@ dependencies = [
 [[package]]
 name = "sim-combat"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ba10b9ae77a8cee966721695c9290e7d382a073f#ba10b9ae77a8cee966721695c9290e7d382a073f"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?branch=main#3fa3a7d39ccb938bacf8fa47b777313711019543"
 dependencies = [
  "sim-foundation",
  "strum",
@@ -1001,8 +1010,9 @@ dependencies = [
 [[package]]
 name = "sim-foundation"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ba10b9ae77a8cee966721695c9290e7d382a073f#ba10b9ae77a8cee966721695c9290e7d382a073f"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?branch=main#3fa3a7d39ccb938bacf8fa47b777313711019543"
 dependencies = [
+ "libm",
  "physics-engine",
  "serde",
  "strum",
@@ -1011,8 +1021,9 @@ dependencies = [
 [[package]]
 name = "sim-movement"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/mmorpg.git?rev=ba10b9ae77a8cee966721695c9290e7d382a073f#ba10b9ae77a8cee966721695c9290e7d382a073f"
+source = "git+https://github.com/moritzbrantner/mmorpg.git?branch=main#3fa3a7d39ccb938bacf8fa47b777313711019543"
 dependencies = [
+ "libm",
  "sim-foundation",
  "strum",
 ]
@@ -1042,7 +1053,7 @@ dependencies = [
 [[package]]
 name = "spatial-kernels"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/rust-kernels?rev=c219e947ad361e79c3c38e843854c73f8fbe9071#c219e947ad361e79c3c38e843854c73f8fbe9071"
+source = "git+https://github.com/moritzbrantner/rust-kernels?rev=7c4cc7c9e1c432969a28304db39f8b11e08f8129#7c4cc7c9e1c432969a28304db39f8b11e08f8129"
 
 [[package]]
 name = "stable_deref_trait"

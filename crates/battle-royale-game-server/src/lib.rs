@@ -301,13 +301,24 @@ mod tests {
         let mut adapter = BattleRoyaleGameServerAdapter::new(BattleMatchId::new(8));
         adapter.add_player(1).unwrap();
         adapter.add_player(2).unwrap();
-        let sheets = SheetRevisions {
-            inventory: 1,
-            quests: 1,
-            loot: 1,
-            abilities: 1,
-            ..SheetRevisions::default()
+        // mmorpg-protocol keeps the revisions opaque: take the ones player 1 holds after
+        // decoding its first projection.
+        let sheets = {
+            let mut simulation = BattleRoyaleMatch::new(BattleMatchId::new(8));
+            simulation.add_player(1).unwrap();
+            simulation.add_player(2).unwrap();
+            let visible = simulation.snapshot_for_player(1).unwrap();
+            let mut decoder = mmorpg_protocol::SnapshotDecoder::new();
+            decoder
+                .decode(
+                    &mmorpg_protocol::pack_snapshot(&visible.zone)
+                        .unwrap()
+                        .payload,
+                )
+                .unwrap();
+            decoder.revisions()
         };
+        assert_ne!(sheets, SheetRevisions::default());
         let jump = battle_royale_core::ZoneCommand::Jump;
         adapter
             .apply_command(
