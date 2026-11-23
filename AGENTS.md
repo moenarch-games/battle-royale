@@ -31,8 +31,7 @@ Read [the Battle Royale Decision Atlas](docs/decisions/atlas.md). This repositor
 
 ## Dependencies
 
-- External reusable foundations are pinned to exact revisions.
-- Update pins intentionally with compatibility evidence.
+- The owner's foundations (`mmorpg`, `game-server`, `input-bindings`, …) are named by their `main` branch, never by an exact revision (owner decision, [mmorpg #1126](https://github.com/moenarch-games/mmorpg/issues/1126)). The committed `Cargo.lock` stays frozen in normal builds; move it intentionally with compatibility evidence.
 - `input-bindings` owns device/binding semantics and the reusable mobile overlay editor; Battle Royale may only supply consumer actions and adapters.
 - Do not fork `game-server`, `physics-engine`, input, settings, rendering or asset foundations into this repository.
 

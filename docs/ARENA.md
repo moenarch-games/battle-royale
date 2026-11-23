@@ -17,11 +17,11 @@ Units are `mmorpg-core` units: 100 per metre, y up, the ground's top at y = 0. A
 
 ## How the MMORPG renderer consumes it
 
-The browser and native clients ([MMORPG #552](https://github.com/moenarch-games/mmorpg/issues/552)) depend on `battle-royale-core` at a pinned revision and read `arena::content()` and `arena::parts()` to build their scene and local practice zone. Because `battle-royale-core` itself pins `mmorpg-core` by git revision, the MMORPG workspace patches that dependency to its own workspace crate:
+The browser and native clients ([MMORPG #552](https://github.com/moenarch-games/mmorpg/issues/552)) depend on `battle-royale-core` by its `main` branch and read `arena::content()` and `arena::parts()` to build their scene and local practice zone. Because `battle-royale-core` itself names `mmorpg-core` by git URL, the MMORPG workspace patches that dependency to its own workspace crate:
 
 ```toml
 [dependencies]
-battle-royale-core = { git = "https://github.com/moenarch-games/battle-royale.git", rev = "<pinned>" }
+battle-royale-core = { git = "https://github.com/moenarch-games/battle-royale.git", branch = "main" }
 
 [patch."https://github.com/moritzbrantner/mmorpg.git"]
 mmorpg-core = { path = "crates/mmorpg-core" }

@@ -3,7 +3,7 @@
 Battle Royale protocol **2**, canonical schema **2**, ruleset revision **3** replace the
 standalone integer player simulator. Version 1 commands and snapshots fail closed.
 Ruleset 3 (#33) gives the storm a 60 s delay and a 120 s close, so it reaches no spawn
-slot in the first two minutes of combat. The embedded MMORPG codecs are the pinned
+slot in the first two minutes of combat. The embedded MMORPG codecs are the locked
 revision's, identified by its `mmorpg-protocol::PROTOCOL_ID`; this repository does not
 fork or extend them. `game-server` still supplies player
 identity, connection epochs, command sequences and its session framing.
@@ -44,7 +44,7 @@ encoding: versions, match ID, authoritative tick, phase clocks, storm and winner
 Ordered roster records contain only identity, sequencing (canonical only) and terminal
 elimination metadata. They contain no copied player health, position or velocity.
 
-A u32 byte length then precedes a complete payload from the pinned MMORPG codec:
+A u32 byte length then precedes a complete payload from the locked MMORPG codec:
 canonical zone state in BRCA, the existing player-scoped zone projection in BRPL.
 The embedded bytes retain their own MMORPG encoding and content identity. Clients
 pass the decoded `MatchSnapshot.zone` to existing MMORPG presentation code; they do

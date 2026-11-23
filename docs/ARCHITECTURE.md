@@ -33,7 +33,7 @@ authoritative commands
 
 Owns consumer-specific client adaptation, not input-device semantics or match truth:
 
-- declares Battle Royale semantic actions through the pinned `input-bindings` model;
+- declares Battle Royale semantic actions through the `input-bindings` model;
 - converts normalized mobile thumbstick samples into the existing discrete movement intent;
 - suppresses duplicate movement commands when high-frequency pointer samples quantize to the same intent;
 - treats look/camera and menu interaction as client-local until a game rule requires a corresponding authoritative command.
@@ -68,7 +68,7 @@ The adapter converts bytes and delegates; it does not create a second scheduler 
 
 ### mmorpg-core
 
-One pinned `ZoneSimulation` per match owns real maximum-level characters, equipment,
+One `ZoneSimulation` per match owns real maximum-level characters, equipment,
 abilities, health, attacks, guards, projectiles, status and Rapier movement. Battle
 Royale stores no second health or physical state. Its fortress arena
 ([ARENA.md](ARENA.md)) is shared zone content (boxes, ramps and lifts) and explicitly opts into
